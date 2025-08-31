@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: digistock_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: digistock_db
+      POSTGRES_USER: digistock_user
+      POSTGRES_PASSWORD: digistock_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    networks:
+      - digistock_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: digistock_backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=digistock_user
+      - DB_PASSWORD=digistock_password
+      - DB_NAME=digistock_db
+    depends_on:
+      - postgres
+    volumes:
+      - ./uploads:/app/uploads
+    networks:
+      - digistock_network
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: digistock_n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=admin123
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=America/Mexico_City
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n_flows:/home/node/.n8n/workflows
+    networks:
+      - digistock_network
+
+volumes:
+  postgres_data:
+  n8n_data:
+
+networks:
+  digistock_network:
+    driver: bridge

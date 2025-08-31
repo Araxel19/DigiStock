@@ -1,0 +1,73 @@
+{
+  "name": "Inventory Sync Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "inventory-sync",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Inventory Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "generic",
+        "genericAuthType": "httpHeaderAuth",
+        "httpHeaderAuth": {
+          "name": "Authorization",
+          "value": "Bearer {{ $env.DIGISTOCK_API_TOKEN }}"
+        },
+        "requestMethod": "GET",
+        "url": "http://backend:3000/api/v1/inventory/products"
+      },
+      "id": "fetch-products",
+      "name": "Fetch Products",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "subject": "DigiStock - Sincronización de Inventario",
+        "emailFormat": "html",
+        "message": "<h2>Reporte de Sincronización</h2><p>Se han sincronizado {{ $json.length }} productos exitosamente.</p>",
+        "toEmail": "admin@digistock.com"
+      },
+      "id": "send-notification",
+      "name": "Send Email Notification",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Inventory Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch Products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Products": {
+      "main": [
+        [
+          {
+            "node": "Send Email Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "versionId": "1"
+}

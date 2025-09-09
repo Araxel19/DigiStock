@@ -1,0 +1,302 @@
+{
+  "name": "DigiStock Complete OCR Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "digistock-ocr",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "digistock-ocr"
+    },
+    {
+      "parameters": {
+        "url": "http://backend:3000/api/v1/inventory/notify-progress",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "planillaId",
+              "value": "={{ $json.planillaId }}"
+            },
+            {
+              "name": "status",
+              "value": "processing"
+            },
+            {
+              "name": "message",
+              "value": "Iniciando procesamiento OCR..."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "notify-start",
+      "name": "Notify Start",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://vision.googleapis.com/v1/images:annotate",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $env.GOOGLE_CLOUD_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "requests",
+              "value": "=[{\"image\":{\"content\":\"{{ $json.imageBase64 }}\"},\"features\":[{\"type\":\"TEXT_DETECTION\"}]}]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "google-vision-ocr",
+      "name": "Google Vision OCR",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:3000/api/v1/inventory/notify-progress",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "planillaId",
+              "value": "={{ $('Webhook Trigger').first().json.planillaId }}"
+            },
+            {
+              "name": "status",
+              "value": "processing"
+            },
+            {
+              "name": "message",
+              "value": "Extrayendo texto de la imagen..."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "notify-ocr-progress",
+      "name": "Notify OCR Progress",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse OCR results and extract product information\nconst ocrResponse = $input.first().json;\nconst extractedText = ocrResponse.responses[0]?.textAnnotations[0]?.description || '';\n\n// Split text into lines and process\nconst lines = extractedText.split('\\n').filter(line => line.trim());\nconst products = [];\n\n// Common patterns for inventory items\nconst patterns = [\n  // Pattern: CODE NAME QUANTITY PRICE\n  /([A-Z0-9]{3,})\\s+(.+?)\\s+(\\d+)\\s+\\$?([\\d,]+\\.?\\d*)/i,\n  // Pattern: CODE | NAME | QTY | PRICE\n  /([A-Z0-9]{3,})\\s*\\|\\s*(.+?)\\s*\\|\\s*(\\d+)\\s*\\|\\s*\\$?([\\d,]+\\.?\\d*)/i,\n  // Pattern: Simple CODE NAME QUANTITY\n  /([A-Z0-9]{3,})\\s+(.+?)\\s+(\\d+)/i\n];\n\nfor (const line of lines) {\n  for (const pattern of patterns) {\n    const match = line.match(pattern);\n    if (match) {\n      const product = {\n        code: match[1].trim(),\n        name: match[2].trim(),\n        quantity: parseInt(match[3]) || 0,\n        price: parseFloat(match[4]?.replace(',', '') || '0') || 0,\n        rawLine: line\n      };\n      \n      // Validate product data\n      if (product.code && product.name && product.code.length >= 3) {\n        products.push(product);\n        break; // Found a match, move to next line\n      }\n    }\n  }\n}\n\nreturn {\n  planillaId: $('Webhook Trigger').first().json.planillaId,\n  rawText: extractedText,\n  extractedProducts: products,\n  totalProducts: products.length,\n  processingDate: new Date().toISOString()\n};"
+      },
+      "id": "parse-products",
+      "name": "Parse Products",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:3000/api/v1/inventory/notify-progress",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "planillaId",
+              "value": "={{ $json.planillaId }}"
+            },
+            {
+              "name": "status",
+              "value": "processing"
+            },
+            {
+              "name": "message",
+              "value": "Estructurando datos de productos..."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "notify-parsing",
+      "name": "Notify Parsing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:3000/api/v1/inventory/planillas/{{ $('Parse Products').first().json.planillaId }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "ocrData",
+              "value": "={{ $('Parse Products').first().json }}"
+            },
+            {
+              "name": "extractedProducts",
+              "value": "={{ $('Parse Products').first().json.extractedProducts }}"
+            },
+            {
+              "name": "status",
+              "value": "processed"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "save-to-database",
+      "name": "Save to Database",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:3000/api/v1/inventory/notify-progress",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "planillaId",
+              "value": "={{ $('Parse Products').first().json.planillaId }}"
+            },
+            {
+              "name": "status",
+              "value": "completed"
+            },
+            {
+              "name": "message",
+              "value": "Procesamiento completado exitosamente. {{ $('Parse Products').first().json.totalProducts }} productos encontrados."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "notify-completion",
+      "name": "Notify Completion",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"success\": true,\n  \"message\": \"OCR processing completed\",\n  \"data\": $('Parse Products').first().json\n} }}"
+      },
+      "id": "webhook-response",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2000, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Notify Start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Start": {
+      "main": [
+        [
+          {
+            "node": "Google Vision OCR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Vision OCR": {
+      "main": [
+        [
+          {
+            "node": "Notify OCR Progress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify OCR Progress": {
+      "main": [
+        [
+          {
+            "node": "Parse Products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Products": {
+      "main": [
+        [
+          {
+            "node": "Notify Parsing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Parsing": {
+      "main": [
+        [
+          {
+            "node": "Save to Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Database": {
+      "main": [
+        [
+          {
+            "node": "Notify Completion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Completion": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "timezone": "America/Mexico_City"
+  },
+  "versionId": "1"
+}

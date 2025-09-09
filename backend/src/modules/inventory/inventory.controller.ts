@@ -7,6 +7,8 @@ import {
   Query,
   Patch,
   UseGuards,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { InventoryService } from './inventory.service';
@@ -64,5 +66,22 @@ export class InventoryController {
     @Body('status') status: string,
   ) {
     return this.inventoryService.updatePlanillaStatus(id, status);
+  }
+
+  @ApiOperation({ summary: 'Notificar progreso de procesamiento' })
+  @Post('notify-progress')
+  @HttpCode(HttpStatus.OK)
+  async notifyProgress(
+    @Body('planillaId') planillaId: string,
+    @Body('status') status: string,
+    @Body('message') message: string,
+  ) {
+    // This endpoint will be called by n8n to update progress
+    // You can implement WebSocket broadcasting here
+    return {
+      success: true,
+      message: 'Progress notification received',
+      data: { planillaId, status, message }
+    };
   }
 }

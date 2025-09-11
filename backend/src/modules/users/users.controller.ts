@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
+  Put,
   Param,
   Delete,
   UseGuards,
@@ -40,7 +40,7 @@ export class UsersController {
   }
 
   @ApiOperation({ summary: 'Actualizar usuario' })
-  @Patch(':id')
+  @Put(':id') // CORREGIDO: Cambiado de @Patch a @Put para coincidir con la petición del frontend.
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
   }

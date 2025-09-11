@@ -10,7 +10,7 @@
           <div class="flex items-center space-x-4">
             <span class="text-sm text-gray-600">{{ authStore.user?.firstName }}</span>
             <button
-              @click="authStore.logout"
+              @click="logoutAndRedirect"
               class="text-sm text-red-600 hover:text-red-800 transition-colors"
             >
               Cerrar Sesión
@@ -122,6 +122,25 @@
             </div>
           </div>
         </router-link>
+
+        <!-- Solo visible para admin -->
+        <router-link
+          v-if="authStore.user?.role === 'admin'"
+          to="/users"
+          class="bg-white p-6 rounded-xl shadow-soft hover:shadow-lg transition-all cursor-pointer group"
+        >
+          <div class="flex items-center">
+            <div class="p-3 rounded-full bg-blue-100 group-hover:bg-blue-200 transition-colors">
+              <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+            </div>
+            <div class="ml-4">
+              <h3 class="text-lg font-semibold text-gray-900">Gestionar Usuarios</h3>
+              <p class="text-gray-600">Crear, editar y eliminar usuarios</p>
+            </div>
+          </div>
+        </router-link>
       </div>
 
       <!-- Recent Activity -->
@@ -157,8 +176,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/store/auth'
+import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
+const router = useRouter()
+
+function logoutAndRedirect() {
+  authStore.logout()
+  router.push('/login')
+}
 
 const stats = ref({
   totalProducts: 156,

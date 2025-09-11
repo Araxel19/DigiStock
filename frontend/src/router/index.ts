@@ -34,6 +34,13 @@ const routes = [
     component: InventoryList,
     meta: { requiresAuth: true }
   }
+  ,
+  {
+    path: '/users',
+    name: 'UserManagement',
+    component: () => import('@/views/UserManagement.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  }
 ]
 
 const router = createRouter({
@@ -43,10 +50,12 @@ const router = createRouter({
 
 router.beforeEach((to, _from, next) => {
   const authStore = useAuthStore()
-  
+
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
   } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
+    next('/dashboard')
+  } else if (to.meta.requiresAdmin && authStore.user?.role !== 'admin') {
     next('/dashboard')
   } else {
     next()

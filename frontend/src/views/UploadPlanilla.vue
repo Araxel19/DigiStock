@@ -31,9 +31,10 @@
               @change="handleFileSelect"
               class="hidden"
             />
+
             <button
-              @click="$refs.fileInput.click()"
-              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200 transition-colors"
+              @click="triggerFileInput"
+              class="inline-flex items-center px-4 py-2 ..."
             >
               Seleccionar Archivo
             </button>
@@ -227,6 +228,7 @@ import { inventoryService } from '@/services/inventory.service'
 const router = useRouter()
 
 // Reactive data
+const fileInput = ref<HTMLInputElement | null>(null)
 const selectedFile = ref<File | null>(null)
 const filePreview = ref<string | null>(null)
 const isDragging = ref(false)
@@ -235,6 +237,10 @@ const isSaving = ref(false)
 const ocrResults = ref<any>(null)
 const errorMessage = ref('')
 const processingSteps = ref<any[]>([])
+
+const triggerFileInput = () => {
+  fileInput.value?.click()
+}
 
 // WebSocket for real-time updates
 let websocket: WebSocket | null = null

@@ -13,7 +13,7 @@ export class InventoryService {
     private readonly productRepository: Repository<Product>,
     @InjectRepository(Planilla)
     private readonly planillaRepository: Repository<Planilla>,
-  ) {}
+  ) { }
 
   // Product methods
   async createProduct(createProductDto: CreateProductDto): Promise<Product> {
@@ -22,11 +22,11 @@ export class InventoryService {
   }
 
   async findAllProducts(search?: string): Promise<Product[]> {
-    const where = search 
+    const where = search
       ? [
-          { name: Like(`%${search}%`) },
-          { code: Like(`%${search}%`) },
-        ]
+        { name: Like(`%${search}%`) },
+        { code: Like(`%${search}%`) },
+      ]
       : {};
 
     return await this.productRepository.find({ where });
@@ -34,7 +34,7 @@ export class InventoryService {
 
   async findProductById(id: string): Promise<Product> {
     const product = await this.productRepository.findOne({ where: { id } });
-    
+
     if (!product) {
       throw new NotFoundException('Producto no encontrado');
     }
@@ -44,9 +44,13 @@ export class InventoryService {
 
   // Planilla methods
   async createPlanilla(createPlanillaDto: CreatePlanillaDto): Promise<Planilla> {
-    const planilla = this.planillaRepository.create(createPlanillaDto);
+    const planilla = this.planillaRepository.create({
+      ...createPlanillaDto,
+      status: createPlanillaDto.status as any,
+    });
     return await this.planillaRepository.save(planilla);
   }
+
 
   async findAllPlanillas(): Promise<Planilla[]> {
     return await this.planillaRepository.find({
@@ -56,7 +60,7 @@ export class InventoryService {
 
   async findPlanillaById(id: string): Promise<Planilla> {
     const planilla = await this.planillaRepository.findOne({ where: { id } });
-    
+
     if (!planilla) {
       throw new NotFoundException('Planilla no encontrada');
     }
@@ -65,10 +69,11 @@ export class InventoryService {
   }
 
   async updatePlanillaStatus(id: string, status: string): Promise<Planilla> {
-    await this.planillaRepository.update(id, { 
-      status,
-      processedAt: status === 'processed' ? new Date() : null 
+    await this.planillaRepository.update(id, {
+      status: status as any,
+      processedAt: status === 'processed' ? new Date() : null
     });
     return this.findPlanillaById(id);
   }
+
 }

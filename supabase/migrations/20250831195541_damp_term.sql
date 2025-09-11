@@ -57,7 +57,7 @@ CREATE INDEX IF NOT EXISTS idx_planillas_created_at ON planillas(created_at);
 INSERT INTO users (email, password, first_name, last_name, role) 
 VALUES (
     'admin@digistock.com', 
-    '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewE/EpUr.sP9JQC2', -- password: admin123
+    '$2y$10$S85xnIGANyXDx74uAgTO7OTJrh5YtPaHnyb9PFzY2MDWMek8Cz1DW', -- password: admin123
     'Administrador',
     'Sistema',
     'admin'

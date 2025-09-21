@@ -1,79 +1,49 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
-import { Product } from './entities/product.entity';
-import { Planilla } from './entities/planilla.entity';
-import { CreateProductDto } from './dto/create-product.dto';
-import { CreatePlanillaDto } from './dto/create-planilla.dto';
+import { Injectable } from '@nestjs/common';
+import { InventoryService } from 'digistock-business-logic';
+import { ProductRepositoryAdapter } from '../../adapters/product.repository.adapter';
+import { PlanillaRepositoryAdapter } from '../../adapters/planilla.repository.adapter';
 
 @Injectable()
-export class InventoryService {
+export class InventoryServiceAdapter {
+  private inventoryService: InventoryService;
+
   constructor(
-    @InjectRepository(Product)
-    private readonly productRepository: Repository<Product>,
-    @InjectRepository(Planilla)
-    private readonly planillaRepository: Repository<Planilla>,
-  ) { }
+    private readonly productRepositoryAdapter: ProductRepositoryAdapter,
+    private readonly planillaRepositoryAdapter: PlanillaRepositoryAdapter,
+  ) {
+    this.inventoryService = new InventoryService(
+      this.productRepositoryAdapter,
+      this.planillaRepositoryAdapter,
+    );
+  }
 
   // Product methods
-  async createProduct(createProductDto: CreateProductDto): Promise<Product> {
-    const product = this.productRepository.create(createProductDto);
-    return await this.productRepository.save(product);
+  async createProduct(createProductDto: any): Promise<any> {
+    return await this.inventoryService.createProduct(createProductDto);
   }
 
-  async findAllProducts(search?: string): Promise<Product[]> {
-    const where = search
-      ? [
-        { name: Like(`%${search}%`) },
-        { code: Like(`%${search}%`) },
-      ]
-      : {};
-
-    return await this.productRepository.find({ where });
+  async findAllProducts(search?: string): Promise<any[]> {
+    return await this.inventoryService.findAllProducts(search);
   }
 
-  async findProductById(id: string): Promise<Product> {
-    const product = await this.productRepository.findOne({ where: { id } });
-
-    if (!product) {
-      throw new NotFoundException('Producto no encontrado');
-    }
-
-    return product;
+  async findProductById(id: string): Promise<any> {
+    return await this.inventoryService.findProductById(id);
   }
 
   // Planilla methods
-  async createPlanilla(createPlanillaDto: CreatePlanillaDto): Promise<Planilla> {
-    const planilla = this.planillaRepository.create({
-      ...createPlanillaDto,
-      status: createPlanillaDto.status as any,
-    });
-    return await this.planillaRepository.save(planilla);
+  async createPlanilla(createPlanillaDto: any): Promise<any> {
+    return await this.inventoryService.createPlanilla(createPlanillaDto);
   }
 
-
-  async findAllPlanillas(): Promise<Planilla[]> {
-    return await this.planillaRepository.find({
-      order: { createdAt: 'DESC' },
-    });
+  async findAllPlanillas(): Promise<any[]> {
+    return await this.inventoryService.findAllPlanillas();
   }
 
-  async findPlanillaById(id: string): Promise<Planilla> {
-    const planilla = await this.planillaRepository.findOne({ where: { id } });
-
-    if (!planilla) {
-      throw new NotFoundException('Planilla no encontrada');
-    }
-
-    return planilla;
+  async findPlanillaById(id: string): Promise<any> {
+    return await this.inventoryService.findPlanillaById(id);
   }
 
-  async updatePlanillaStatus(id: string, status: string): Promise<Planilla> {
-    await this.planillaRepository.update(id, {
-      status: status as any,
-      processedAt: status === 'processed' ? new Date() : null
-    });
-    return this.findPlanillaById(id);
+  async updatePlanillaStatus(id: string, status: string): Promise<any> {
+    return await this.inventoryService.updatePlanillaStatus(id, status);
   }
-
 }

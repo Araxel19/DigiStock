@@ -11,7 +11,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { InventoryService } from './inventory.service';
+import { InventoryServiceAdapter } from './inventory.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { CreatePlanillaDto } from './dto/create-planilla.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -21,7 +21,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @UseGuards(JwtAuthGuard)
 @Controller('inventory')
 export class InventoryController {
-  constructor(private readonly inventoryService: InventoryService) {}
+  constructor(private readonly inventoryService: InventoryServiceAdapter) {}
 
   @ApiOperation({ summary: 'Crear producto' })
   @Post('products')

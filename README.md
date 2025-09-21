@@ -1,201 +1,243 @@
 # DigiStock - Sistema de Digitalización de Inventario
 
-Sistema integral para la digitalización y gestión de inventario a partir de planillas físicas utilizando OCR y flujos de automatización con n8n.
+## 📋 Descripción
 
-## 🎯 Arquitectura Innovadora
+DigiStock es un sistema completo de digitalización de inventario que utiliza OCR (Reconocimiento Óptico de Caracteres) para procesar planillas de inventario y extraer información de productos automáticamente. El sistema está construido con una arquitectura de tres capas que separa claramente las responsabilidades entre la presentación, la lógica de negocio y la API.
 
-DigiStock utiliza **n8n como motor principal** de procesamiento OCR, mientras que el frontend y backend manejan la interfaz de usuario y persistencia de datos. Esta arquitectura distribuida garantiza:
+## 🏗️ Arquitectura
 
-- ✅ **Procesamiento asíncrono** sin bloquear la interfaz
-- ✅ **Actualizaciones en tiempo real** del progreso
-- ✅ **Escalabilidad** para múltiples planillas simultáneas
-- ✅ **Robustez** con manejo de errores y reintentos
+El proyecto está organizado en **tres capas principales**:
 
-## 🚀 Tecnologías
+### 1. **Frontend** (`frontend/`)
+- **Tecnología:** Vue.js 3 + TypeScript
+- **Responsabilidad:** Interfaz de usuario y experiencia del usuario
+- **Características:**
+  - Interfaz moderna con Tailwind CSS
+  - Gestión de estado con Pinia
+  - Enrutamiento con Vue Router
+  - Componentes reutilizables
 
-- **Backend**: NestJS (TypeScript)
-- **Frontend**: Vue.js 3 + Vite + Pinia
-- **Base de datos**: PostgreSQL
-- **OCR**: Google Cloud Vision API
-- **Automatización**: n8n
-- **Autenticación**: JWT
-- **Contenedores**: Docker + Docker Compose
+### 2. **Backend - API Gateway** (`backend/`)
+- **Tecnología:** NestJS + TypeScript
+- **Responsabilidad:** API REST, autenticación, orquestación
+- **Características:**
+  - Endpoints REST documentados con Swagger
+  - Autenticación JWT
+  - Middleware de seguridad
+  - Integración con servicios externos
 
-## 📂 Estructura del Proyecto
+### 3. **Business Logic** (`business-logic/`)
+- **Tecnología:** TypeScript puro
+- **Responsabilidad:** Lógica de negocio independiente
+- **Características:**
+  - Servicios de negocio
+  - Entidades de dominio
+  - DTOs y validaciones
+  - Interfaces para desacoplamiento
 
-```
-DigiStock/
-├── backend/                        # NestJS API
-├── frontend/                       # Vue.js + Vite
-├── database/                       # Migraciones y esquemas
-├── n8n_flows/                     # Flujos exportados de n8n
-├── docs/                          # Documentación
-├── docker-compose.yml
-└── README.md
-```
+### 4. **Automatización** (`n8n_flows/`)
+- **Tecnología:** n8n
+- **Responsabilidad:** Flujos de automatización y procesamiento OCR
+- **Características:**
+  - Procesamiento automático de imágenes
+  - Integración con Google Cloud Vision
+  - Sincronización de datos
 
-## 🚀 Inicio Rápido
+## 🚀 Características Principales
 
-### Instalación Automática (Recomendada)
+- ✅ **Procesamiento OCR** via n8n (sin billing en backend)
+- ✅ **Gestión de inventario** completa
+- ✅ **Autenticación y autorización** robusta
+- ✅ **Interfaz moderna** y responsive
+- ✅ **Arquitectura escalable** de tres capas
+- ✅ **Automatización** con n8n
+- ✅ **Documentación completa** de API
+- ✅ **Despliegue con Docker**
 
+## 🛠️ Tecnologías Utilizadas
+
+### Frontend
+- Vue.js 3 (Composition API)
+- TypeScript
+- Tailwind CSS
+- Pinia (gestión de estado)
+- Vue Router
+- Axios
+
+### Backend
+- NestJS
+- TypeScript
+- TypeORM
+- Passport (JWT)
+- Swagger/OpenAPI
+- Multer (archivos)
+
+### Business Logic
+- TypeScript puro
+- Class-validator
+- Interfaces para desacoplamiento
+
+### Base de Datos
+- PostgreSQL
+- TypeORM
+
+### Infraestructura
+- Docker & Docker Compose
+- n8n (automatización)
+- Google Cloud Vision API
+
+## 📦 Instalación y Despliegue
+
+### Prerrequisitos
+- Docker y Docker Compose
+- Node.js 18+ (para desarrollo local)
+- Cuenta de Google Cloud (para OCR)
+
+### Despliegue con Docker
+
+1. **Clonar el repositorio:**
 ```bash
-# Clonar el repositorio
-git clone <tu-repositorio> digistock
-cd digistock
-
-# Ejecutar script de instalación
-./scripts/setup.sh
+git clone <repository-url>
+cd DigiStock
 ```
 
-### Instalación Manual
-
-1. **Clonar y configurar**:
-   ```bash
-   git clone <tu-repositorio> digistock
-   cd digistock
-   cp .env.example .env
-   ```
-
-2. **Configurar Google Cloud Vision API** en `.env`:
-   ```bash
-   GOOGLE_CLOUD_PROJECT_ID=tu-proyecto-gcp
-   GOOGLE_CLOUD_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n..."
-   GOOGLE_CLOUD_CLIENT_EMAIL=tu-service@proyecto.iam.gserviceaccount.com
-   ```
-
-3. **Levantar servicios**:
-   ```bash
-   docker-compose up -d
-   ```
-
-4. **Configurar n8n**:
-   - Acceder a http://localhost:5678 (admin/admin123)
-   - Importar workflow desde `n8n_flows/complete_ocr_workflow.json`
-   - Configurar variables de entorno en n8n
-
-## 🔄 Flujo de Trabajo
-
-### 1. Usuario Sube Planilla
-```
-Frontend → Validación → Preview → Botón "Procesar"
-```
-
-### 2. Procesamiento Automático en n8n
-```
-Webhook n8n → Google Vision OCR → Parsing → Base de Datos
-```
-
-### 3. Actualizaciones en Tiempo Real
-```
-n8n → Backend → WebSocket → Frontend (Progreso visual)
-```
-
-### 4. Edición y Guardado
-```
-Resultados OCR → Tabla editable → Guardar en inventario
-```
-
-## 📱 Funcionalidades
-
-- ✅ Carga de planillas físicas
-- ✅ Procesamiento OCR automático
-- ✅ Gestión de inventario
-- ✅ Dashboard administrativo
-- ✅ Autenticación y autorización
-- ✅ Integración con n8n
-
-## 🌐 URLs de Acceso
-
-- **Frontend**: http://localhost:8080
-- **Backend API**: http://localhost:3000
-- **n8n Interface**: http://localhost:5678
-- **API Documentation**: http://localhost:3000/api/docs
-
-## 🔐 Credenciales por Defecto
-
-- **DigiStock**: admin@digistock.com / admin123
-- **n8n**: admin / admin123
-
-## 🔧 Configuración
-
-### Variables de Entorno Críticas
-
+2. **Configurar variables de entorno:**
 ```bash
-# Google Cloud Vision API (OBLIGATORIO)
-GOOGLE_CLOUD_PROJECT_ID=tu-proyecto
-GOOGLE_CLOUD_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n..."
-GOOGLE_CLOUD_CLIENT_EMAIL=service-account@proyecto.iam.gserviceaccount.com
-
-# JWT Security
-JWT_SECRET=clave-super-secreta-generada-automaticamente
-
-# n8n Integration
-N8N_WEBHOOK_URL=http://n8n:5678/webhook
+cp .env.example .env
+# Editar .env con tus configuraciones
 ```
 
-### Configuración de n8n
-
-1. **Variables de entorno en n8n**:
-   ```
-   GOOGLE_CLOUD_API_KEY=tu-api-key
-   BACKEND_URL=http://backend:3000
-   ```
-
-2. **Webhook URL**: `http://localhost:5678/webhook/digistock-ocr`
-
-## 🛠️ Comandos Útiles
-
+3. **Ejecutar el sistema completo:**
 ```bash
-# Ver logs en tiempo real
-docker-compose logs -f
+docker-compose up -d --build
+```
 
-# Reiniciar servicios
-docker-compose restart
-
-# Backup de base de datos
-docker-compose exec postgres pg_dump -U digistock_user digistock_db > backup.sql
-
-# Acceder a la base de datos
-docker-compose exec postgres psql -U digistock_user -d digistock_db
-
-# Ver estado de servicios
+4. **Verificar que todos los servicios estén ejecutándose:**
+```bash
 docker-compose ps
 ```
 
-## 🔍 Troubleshooting
+### Servicios Disponibles
 
-### Problema: OCR no funciona
+- **Frontend:** http://localhost:8080
+- **Backend API:** http://localhost:3000
+- **API Documentation:** http://localhost:3000/api
+- **n8n Interface:** http://localhost:5678
+- **PostgreSQL:** localhost:5432
+
+## 🔧 Desarrollo Local
+
+### Instalar dependencias
+
 ```bash
-# Verificar configuración de Google Cloud
-docker-compose logs backend | grep "GOOGLE_CLOUD"
+# Business Logic
+cd business-logic
+npm install
+npm run build
+
+# Backend
+cd ../backend
+npm install
+
+# Frontend
+cd ../frontend
+npm install
 ```
 
-### Problema: n8n no conecta con backend
-```bash
-# Verificar red de Docker
-docker network inspect digistock_digistock_network
-```
+### Ejecutar en modo desarrollo
 
-### Problema: Frontend no carga
 ```bash
-# Reconstruir frontend
-docker-compose build frontend
-docker-compose up -d frontend
+# Terminal 1 - Backend
+cd backend
+npm run start:dev
+
+# Terminal 2 - Frontend
+cd frontend
+npm run dev
 ```
 
 ## 📚 Documentación
 
-- **[Manual de Instalación](docs/manual_instalacion.md)**: Guía completa paso a paso
-- **[Flujo de Arquitectura](docs/flujo_arquitectura.md)**: Detalles técnicos del flujo
-- **[Manual de Usuario](docs/manual_usuario.md)**: Guía para usuarios finales
+- [Arquitectura del Sistema](docs/architecture.md)
+- [Manual de Instalación](docs/manual_instalacion.md)
+- [Manual de Usuario](docs/manual_usuario.md)
+- [API Documentation](http://localhost:3000/api) (cuando el backend esté ejecutándose)
 
-## 🚨 Importante
+## 🔐 Configuración de Seguridad
 
-1. **Configura Google Cloud Vision API** antes de usar el sistema
-2. **Importa los workflows de n8n** desde `n8n_flows/`
-3. **Cambia las contraseñas por defecto** en producción
-4. **Haz backups regulares** de la base de datos
+### Variables de Entorno Requeridas
+
+```env
+# Base de datos
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=digistock_user
+DB_PASSWORD=digistock_password
+DB_NAME=digistock_db
+
+# JWT
+JWT_SECRET=your-super-secret-jwt-key
+JWT_EXPIRES_IN=7d
+
+# Google Cloud Vision
+GOOGLE_APPLICATION_CREDENTIALS=path/to/service-account.json
+
+# n8n
+N8N_BASIC_AUTH_USER=admin
+N8N_BASIC_AUTH_PASSWORD=admin123
+```
+
+## 📊 Estructura del Proyecto
+
+```
+DigiStock/
+├── frontend/                 # Interfaz de usuario
+├── backend/                  # API Gateway
+├── business-logic/           # Lógica de negocio
+├── n8n_flows/               # Flujos de automatización
+├── docs/                    # Documentación
+├── docker-compose.yml       # Orquestación
+└── README.md
+```
+
+## 🤝 Contribución
+
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+## 📝 Licencia
+
+Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para detalles.
+
+## 👥 Equipo
+
+- **DigiStock Team** - Desarrollo y mantenimiento
+
+## 🆘 Soporte
+
+Si tienes problemas o preguntas:
+
+1. Revisa la [documentación](docs/)
+2. Busca en los [issues](../../issues) existentes
+3. Crea un nuevo issue con detalles del problema
+
+## 🔄 Changelog
+
+### v2.0.0 - Refactorización Arquitectural
+- ✅ Separación en tres capas (Frontend, Backend, Business Logic)
+- ✅ Implementación del patrón Adapter
+- ✅ Mejora en la mantenibilidad y escalabilidad
+- ✅ Documentación completa de arquitectura
+
+### v1.0.0 - Versión Inicial
+- ✅ Sistema básico de inventario con OCR
+- ✅ Autenticación JWT
+- ✅ Interfaz Vue.js
+- ✅ Integración con n8n
 
 ---
 
-**¡Tu sistema DigiStock está listo para digitalizar inventarios con tecnología OCR avanzada! 🚀**
+**DigiStock** - Digitalizando inventarios de manera inteligente 🚀

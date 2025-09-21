@@ -1,62 +1,34 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcryptjs';
+import { Injectable } from '@nestjs/common';
+import { AuthService } from 'digistock-business-logic';
 import { UsersService } from '../users/users.service';
-import { CreateUserDto } from '../users/dto/create-user.dto';
-import { LoginDto } from './dto/login.dto';
+import { JwtServiceAdapter } from '../../adapters/jwt.service.adapter';
 
 @Injectable()
-export class AuthService {
+export class AuthServiceAdapter {
+  private authService: AuthService;
+
   constructor(
     private readonly usersService: UsersService,
-    private readonly jwtService: JwtService,
-  ) {}
+    private readonly jwtServiceAdapter: JwtServiceAdapter,
+  ) {
+    this.authService = new AuthService(
+      this.usersService as any,
+      this.jwtServiceAdapter,
+    );
+  }
 
   async validateUser(email: string, password: string): Promise<any> {
-    const user = await this.usersService.findByEmail(email);
-    
-    if (user && await bcrypt.compare(password, user.password)) {
-      const { password, ...result } = user;
-      return result;
-    }
-    
-    return null;
+    return await this.authService.validateUser(email, password);
   }
 
-  async login(loginDto: LoginDto) {
-    const user = await this.validateUser(loginDto.email, loginDto.password);
-    
-    if (!user) {
-      throw new UnauthorizedException('Credenciales inválidas');
-    }
-
-    const payload = { 
-      email: user.email, 
-      sub: user.id, 
-      role: user.role 
-    };
-
-    return {
-      access_token: this.jwtService.sign(payload),
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role,
-      },
-    };
+  async login(loginDto: any) {
+    return await this.authService.login(loginDto);
   }
 
-  async register(createUserDto: CreateUserDto) {
-    const hashedPassword = await bcrypt.hash(createUserDto.password, 12);
-    
-    const user = await this.usersService.create({
-      ...createUserDto,
-      password: hashedPassword,
-    });
-
-    const { password, ...result } = user;
-    return result;
+  async register(createUserDto: any) {
+    return await this.authService.register(createUserDto);
   }
 }
+
+// Alias para compatibilidad
+export { AuthServiceAdapter as AuthService };

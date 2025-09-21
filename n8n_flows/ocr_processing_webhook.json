@@ -1,0 +1,161 @@
+{
+  "name": "OCR Processing Webhook",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ocr-process",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook OCR",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "ocr-process"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.filePath }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "check-file-path",
+      "name": "Check File Path",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://vision.googleapis.com/v1/images:annotate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "requests",
+              "value": "=[{\n  \"image\": {\n    \"source\": {\n      \"imageUri\": \"gs://your-bucket/{{ $json.filePath }}\"\n    }\n  },\n  \"features\": [\n    {\n      \"type\": \"TEXT_DETECTION\"\n    }\n  ]\n}]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "google-vision-api",
+      "name": "Google Vision API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 200],
+      "credentials": {
+        "googleApi": {
+          "id": "google-vision-credentials",
+          "name": "Google Vision API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Procesar la respuesta de Google Vision API\nconst visionResponse = $input.first().json;\nconst textAnnotations = visionResponse.responses[0]?.textAnnotations || [];\n\nif (textAnnotations.length === 0) {\n  return {\n    success: false,\n    message: 'No se detectó texto en la imagen',\n    data: null\n  };\n}\n\nconst extractedText = textAnnotations[0].description;\n\n// Parsear productos del texto extraído\nconst lines = extractedText.split('\\n').filter(line => line.trim());\nconst products = [];\n\nfor (const line of lines) {\n  // Patrones comunes: código | nombre | cantidad | precio\n  const patterns = [\n    /([A-Z0-9]+)\\s+(.+?)\\s+(\\d+)\\s+\\$?(\\d+\\.?\\d*)/,\n    /(\\w+)\\s+(.+?)\\s+(\\d+)/,\n  ];\n\n  for (const pattern of patterns) {\n    const match = line.match(pattern);\n    if (match) {\n      products.push({\n        code: match[1],\n        name: match[2]?.trim(),\n        quantity: parseInt(match[3]) || 0,\n        price: parseFloat(match[4]) || 0,\n        rawLine: line,\n      });\n      break;\n    }\n  }\n}\n\nreturn {\n  success: true,\n  message: 'Texto extraído exitosamente',\n  data: {\n    rawText: extractedText,\n    structuredData: products,\n    filePath: $('Webhook OCR').first().json.filePath\n  }\n};"
+      },
+      "id": "process-ocr-results",
+      "name": "Process OCR Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "id": "success-response",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": false,\n  \"message\": \"File path is required\",\n  \"data\": null\n}"
+      },
+      "id": "error-response",
+      "name": "Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [680, 400]
+    }
+  ],
+  "connections": {
+    "Webhook OCR": {
+      "main": [
+        [
+          {
+            "node": "Check File Path",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check File Path": {
+      "main": [
+        [
+          {
+            "node": "Google Vision API",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Vision API": {
+      "main": [
+        [
+          {
+            "node": "Process OCR Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process OCR Results": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "1"
+}

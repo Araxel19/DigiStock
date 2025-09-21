@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15-alpine
@@ -17,10 +15,19 @@ services:
     networks:
       - digistock_network
 
+  business-logic:
+    build:
+      context: ./business-logic
+      dockerfile: Dockerfile
+    container_name: digistock_business_logic
+    restart: unless-stopped
+    networks:
+      - digistock_network
+
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./backend/Dockerfile
     container_name: digistock_backend
     restart: unless-stopped
     ports:
@@ -29,8 +36,11 @@ services:
       - .env
     environment:
       - NODE_ENV=production
+      - N8N_WEBHOOK_URL=http://n8n:5678/webhook-test
     depends_on:
       - postgres
+      - business-logic
+      - n8n
     volumes:
       - ./uploads:/app/uploads
     networks:
@@ -46,7 +56,7 @@ services:
       - N8N_BASIC_AUTH_ACTIVE=true
       - N8N_BASIC_AUTH_USER=admin
       - N8N_BASIC_AUTH_PASSWORD=admin123
-      - WEBHOOK_URL=http://localhost:5678/
+      - N8N_WEBHOOK_URL=http://n8n:5678/webhook
       - GENERIC_TIMEZONE=America/Mexico_City
     volumes:
       - n8n_data:/home/node/.n8n

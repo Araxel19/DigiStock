@@ -6,6 +6,7 @@ import { UsersModule } from './modules/users/users.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { OcrModule } from './modules/ocr/ocr.module';
 import { DatabaseConfig } from './config/database.config';
+import { User, Product, Planilla } from 'digistock-business-logic';
 
 @Module({
   imports: [

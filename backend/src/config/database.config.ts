@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { TypeOrmModuleOptions, TypeOrmOptionsFactory } from '@nestjs/typeorm';
+import { User, Product, Planilla } from 'digistock-business-logic';
 
 @Injectable()
 export class DatabaseConfig implements TypeOrmOptionsFactory {
@@ -11,7 +12,7 @@ export class DatabaseConfig implements TypeOrmOptionsFactory {
       username: process.env.DB_USERNAME || 'digistock_user',
       password: process.env.DB_PASSWORD || 'digistock_password',
       database: process.env.DB_NAME || 'digistock_db',
-      entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+      entities: [User, Product, Planilla],
       synchronize: process.env.NODE_ENV === 'development',
       logging: process.env.NODE_ENV === 'development',
       ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,

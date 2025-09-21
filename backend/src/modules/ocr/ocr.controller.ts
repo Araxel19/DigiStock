@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Get,
   UploadedFile,
   UseInterceptors,
   UseGuards,
@@ -8,9 +9,9 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
-import { diskStorage } from 'multer';
+import { File, diskStorage } from 'multer';
 import { extname } from 'path';
-import { OcrService } from './ocr.service';
+import { OcrServiceAdapter } from './ocr.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('OCR')
@@ -18,7 +19,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @UseGuards(JwtAuthGuard)
 @Controller('ocr')
 export class OcrController {
-  constructor(private readonly ocrService: OcrService) {}
+  constructor(private readonly ocrService: OcrServiceAdapter) {}
 
   @ApiOperation({ summary: 'Procesar imagen con OCR' })
   @ApiConsumes('multipart/form-data')
@@ -46,7 +47,7 @@ export class OcrController {
       },
     }),
   )
-  async processImage(@UploadedFile() file: Express.Multer.File) {
+  async processImage(@UploadedFile() file: File) {
     if (!file) {
       throw new Error('No se proporcionó archivo');
     }
@@ -61,5 +62,11 @@ export class OcrController {
     @Body('workflowId') workflowId: string,
   ) {
     return await this.ocrService.sendToN8nWebhook(data, workflowId);
+  }
+
+  @ApiOperation({ summary: 'Verificar estado de n8n' })
+  @Get('n8n-status')
+  async checkN8nStatus() {
+    return await this.ocrService.checkN8nStatus();
   }
 }

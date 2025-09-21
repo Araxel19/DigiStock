@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
-import { OcrService } from './ocr.service';
+import { OcrServiceAdapter } from './ocr.service';
 import { OcrController } from './ocr.controller';
-import { GcpConfig } from '../../config/gcp.config';
 import { N8nConfig } from '../../config/n8n.config';
+import { N8nConfigAdapter } from '../../adapters/n8n.config.adapter';
 
 @Module({
-  providers: [OcrService, GcpConfig, N8nConfig],
+  providers: [OcrServiceAdapter, N8nConfig, N8nConfigAdapter],
   controllers: [OcrController],
-  exports: [OcrService],
+  exports: [OcrServiceAdapter],
 })
 export class OcrModule {}

@@ -1,5 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export interface IN8nConfig {
   getWebhookUrl(workflowId: string): string;
@@ -14,7 +16,7 @@ export class OcrService {
     private readonly n8nConfig: IN8nConfig,
   ) {
     this.httpClient = axios.create({
-      timeout: 30000,
+      timeout: 60000, // Increased timeout for base64 upload
       headers: {
         'Content-Type': 'application/json',
       },
@@ -23,10 +25,23 @@ export class OcrService {
 
   async processImage(imagePath: string): Promise<any> {
     try {
+      // Construct the full path. Assuming imagePath is relative to the project root.
+      // This might need adjustment depending on where the app runs.
+      const fullPath = path.resolve(process.cwd(), imagePath);
+
+      if (!fs.existsSync(fullPath)) {
+        throw new BadRequestException(`File not found at path: ${fullPath}`);
+      }
+
+      // Read file and convert to base64
+      const imageBuffer = fs.readFileSync(fullPath);
+      const imageBase64 = imageBuffer.toString('base64');
+
       const webhookUrl = `${this.n8nConfig.getBaseUrl()}/ocr-process`;
       
       const response = await this.httpClient.post(webhookUrl, {
-        filePath: imagePath,
+        imageBase64: imageBase64,
+        originalPath: imagePath,
         timestamp: new Date().toISOString(),
       });
 

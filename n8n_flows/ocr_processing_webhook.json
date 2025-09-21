@@ -1,5 +1,5 @@
 {
-  "name": "OCR Processing Webhook",
+  "name": "My workflow",
   "nodes": [
     {
       "parameters": {
@@ -8,11 +8,14 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "webhook-trigger",
+      "id": "f316270e-9b51-441d-aced-460614a5b5d1",
       "name": "Webhook OCR",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [240, 300],
+      "position": [
+        256,
+        96
+      ],
       "webhookId": "ocr-process"
     },
     {
@@ -20,17 +23,20 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{ $json.filePath }}",
+              "value1": "={{ $json.body.imageBase64 }}",
               "operation": "isNotEmpty"
             }
           ]
         }
       },
-      "id": "check-file-path",
-      "name": "Check File Path",
+      "id": "730c56ee-8835-4b8a-8fda-a105d91016ae",
+      "name": "Check Base64",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [460, 300]
+      "position": [
+        480,
+        96
+      ]
     },
     {
       "parameters": {
@@ -47,74 +53,87 @@
           ]
         },
         "sendBody": true,
+        "specifyBody": "={{ { \"requests\": [ { \"image\": { \"content\": $json.body.imageBase64.split(',')[1] || $json.body.imageBase64 }, \"features\": [ { \"type\": \"TEXT_DETECTION\" } ] } ] } }}",
         "bodyParameters": {
           "parameters": [
-            {
-              "name": "requests",
-              "value": "=[{\n  \"image\": {\n    \"source\": {\n      \"imageUri\": \"gs://your-bucket/{{ $json.filePath }}\"\n    }\n  },\n  \"features\": [\n    {\n      \"type\": \"TEXT_DETECTION\"\n    }\n  ]\n}]"
-            }
+            {}
           ]
         },
         "options": {}
       },
-      "id": "google-vision-api",
+      "id": "a9a1ddbc-a535-4cfd-bf8e-f7fa280fcb14",
       "name": "Google Vision API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [680, 200],
+      "position": [
+        688,
+        0
+      ],
       "credentials": {
         "googleApi": {
-          "id": "google-vision-credentials",
-          "name": "Google Vision API"
+          "id": "stmGx4iAEGUBsYuk",
+          "name": "Google Service Account account"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "// Procesar la respuesta de Google Vision API\nconst visionResponse = $input.first().json;\nconst textAnnotations = visionResponse.responses[0]?.textAnnotations || [];\n\nif (textAnnotations.length === 0) {\n  return {\n    success: false,\n    message: 'No se detectó texto en la imagen',\n    data: null\n  };\n}\n\nconst extractedText = textAnnotations[0].description;\n\n// Parsear productos del texto extraído\nconst lines = extractedText.split('\\n').filter(line => line.trim());\nconst products = [];\n\nfor (const line of lines) {\n  // Patrones comunes: código | nombre | cantidad | precio\n  const patterns = [\n    /([A-Z0-9]+)\\s+(.+?)\\s+(\\d+)\\s+\\$?(\\d+\\.?\\d*)/,\n    /(\\w+)\\s+(.+?)\\s+(\\d+)/,\n  ];\n\n  for (const pattern of patterns) {\n    const match = line.match(pattern);\n    if (match) {\n      products.push({\n        code: match[1],\n        name: match[2]?.trim(),\n        quantity: parseInt(match[3]) || 0,\n        price: parseFloat(match[4]) || 0,\n        rawLine: line,\n      });\n      break;\n    }\n  }\n}\n\nreturn {\n  success: true,\n  message: 'Texto extraído exitosamente',\n  data: {\n    rawText: extractedText,\n    structuredData: products,\n    filePath: $('Webhook OCR').first().json.filePath\n  }\n};"
+        "jsCode": "// Procesar la respuesta de Google Vision API\nconst visionResponse = $input.first().json;\nconst textAnnotations = visionResponse.responses[0]?.textAnnotations || [];\n\nif (textAnnotations.length === 0) {\n  return [{ json: { success: false, message: 'No se detectó texto en la imagen', data: null } }];\n}\n\nconst extractedText = textAnnotations[0].description;\nconst lines = extractedText.split('\\n').filter(line => line.trim());\nconst products = [];\n\nfor (const line of lines) {\n  const patterns = [ /([A-Z0-9]+)\\s+(.+?)\\s+(\\d+)\\s+\\$?(\\d+\\.?\\d*)/, /(\\w+)\\s+(.+?)\\s+(\\d+)/ ];\n  for (const pattern of patterns) {\n    const match = line.match(pattern);\n    if (match) {\n      products.push({ code: match[1], name: match[2]?.trim(), quantity: parseInt(match[3]) || 0, price: parseFloat(match[4]) || 0, rawLine: line });\n      break;\n    }\n  }\n}\n\nreturn [{ json: { success: true, message: 'Texto extraído exitosamente', data: { rawText: extractedText, structuredData: products, originalPath: $json.body.originalPath } } }];"
       },
-      "id": "process-ocr-results",
+      "id": "01b72e18-459f-406b-9d8f-eaa0bd7fe321",
       "name": "Process OCR Results",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [900, 200]
+      "position": [
+        912,
+        0
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ $json }}"
+        "responseBody": "={{ $json }}",
+        "options": {}
       },
-      "id": "success-response",
+      "id": "7f841845-54d2-472f-a46b-d2bffd21dc4b",
       "name": "Success Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1120, 200]
+      "position": [
+        1136,
+        0
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n  \"success\": false,\n  \"message\": \"File path is required\",\n  \"data\": null\n}"
+        "responseBody": "={\"success\": false, \"message\": \"imageBase64 is required\", \"data\": null}",
+        "options": {}
       },
-      "id": "error-response",
+      "id": "b1db6e38-8697-4828-aa37-b3db789ac2fb",
       "name": "Error Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [680, 400]
+      "position": [
+        688,
+        208
+      ]
     }
   ],
+  "pinData": {},
   "connections": {
     "Webhook OCR": {
       "main": [
         [
           {
-            "node": "Check File Path",
+            "node": "Check Base64",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check File Path": {
+    "Check Base64": {
       "main": [
         [
           {
@@ -132,17 +151,6 @@
         ]
       ]
     },
-    "Google Vision API": {
-      "main": [
-        [
-          {
-            "node": "Process OCR Results",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Process OCR Results": {
       "main": [
         [
@@ -153,9 +161,27 @@
           }
         ]
       ]
+    },
+    "Google Vision API": {
+      "main": [
+        [
+          {
+            "node": "Process OCR Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
-  "settings": {},
-  "versionId": "1"
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9d7a140e-0908-456c-9b9c-70a6fb6813ef",
+  "meta": {
+    "instanceId": "66f6720522f547cb47e0e6a09537c44f018f47ea85f9c6ed8598639fef226adf"
+  },
+  "id": "OCb9o4IW0Z8rywGJ",
+  "tags": []
 }

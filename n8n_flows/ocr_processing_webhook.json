@@ -8,12 +8,12 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "f316270e-9b51-441d-aced-460614a5b5d1",
+      "id": "4ade7189-ce23-4fa0-a64c-4008c6a2b713",
       "name": "Webhook OCR",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        256,
+        -432,
         96
       ],
       "webhookId": "ocr-process"
@@ -29,79 +29,13 @@
           ]
         }
       },
-      "id": "730c56ee-8835-4b8a-8fda-a105d91016ae",
+      "id": "8b7633d8-8bb5-4baa-80e6-fc12e695b139",
       "name": "Check Base64",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        480,
+        -208,
         96
-      ]
-    },
-    {
-      "parameters": {
-        "url": "https://vision.googleapis.com/v1/images:annotate",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "googleApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "={{ { \"requests\": [ { \"image\": { \"content\": $json.body.imageBase64.split(',')[1] || $json.body.imageBase64 }, \"features\": [ { \"type\": \"TEXT_DETECTION\" } ] } ] } }}",
-        "bodyParameters": {
-          "parameters": [
-            {}
-          ]
-        },
-        "options": {}
-      },
-      "id": "a9a1ddbc-a535-4cfd-bf8e-f7fa280fcb14",
-      "name": "Google Vision API",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        688,
-        0
-      ],
-      "credentials": {
-        "googleApi": {
-          "id": "stmGx4iAEGUBsYuk",
-          "name": "Google Service Account account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "// Procesar la respuesta de Google Vision API\nconst visionResponse = $input.first().json;\nconst textAnnotations = visionResponse.responses[0]?.textAnnotations || [];\n\nif (textAnnotations.length === 0) {\n  return [{ json: { success: false, message: 'No se detectó texto en la imagen', data: null } }];\n}\n\nconst extractedText = textAnnotations[0].description;\nconst lines = extractedText.split('\\n').filter(line => line.trim());\nconst products = [];\n\nfor (const line of lines) {\n  const patterns = [ /([A-Z0-9]+)\\s+(.+?)\\s+(\\d+)\\s+\\$?(\\d+\\.?\\d*)/, /(\\w+)\\s+(.+?)\\s+(\\d+)/ ];\n  for (const pattern of patterns) {\n    const match = line.match(pattern);\n    if (match) {\n      products.push({ code: match[1], name: match[2]?.trim(), quantity: parseInt(match[3]) || 0, price: parseFloat(match[4]) || 0, rawLine: line });\n      break;\n    }\n  }\n}\n\nreturn [{ json: { success: true, message: 'Texto extraído exitosamente', data: { rawText: extractedText, structuredData: products, originalPath: $json.body.originalPath } } }];"
-      },
-      "id": "01b72e18-459f-406b-9d8f-eaa0bd7fe321",
-      "name": "Process OCR Results",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        912,
-        0
-      ]
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ $json }}",
-        "options": {}
-      },
-      "id": "7f841845-54d2-472f-a46b-d2bffd21dc4b",
-      "name": "Success Response",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [
-        1136,
-        0
       ]
     },
     {
@@ -110,14 +44,93 @@
         "responseBody": "={\"success\": false, \"message\": \"imageBase64 is required\", \"data\": null}",
         "options": {}
       },
-      "id": "b1db6e38-8697-4828-aa37-b3db789ac2fb",
+      "id": "3641df39-4435-4f43-9fb0-bb7d78e4f73a",
       "name": "Error Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        688,
+        0,
         208
       ]
+    },
+    {
+      "parameters": {
+        "documentType": "image_url",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mistralAi",
+      "typeVersion": 1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "29337b08-4248-4c63-81b1-d2bebbdb213a",
+      "name": "Extract text",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "CylM8GXj1nbT8Q5u",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "body.imageBase64",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8cd53773-30d9-4893-807d-aaefe5927aee",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lee el texto del OCR\nconst text = $json.pages?.[0]?.markdown;\n\nif (!text) {\n  throw new Error(\"No se encontró extractedText en la entrada\");\n}\n\n// Separa las líneas\nconst lines = text.split(\"\\n\").filter(l => l.trim() !== \"\");\n\n// Encuentra el header (línea de columnas)\nconst headerIndex = lines.findIndex(l => l.includes(\"INVENTARIO\") && l.includes(\"N.º DE ARTÍCULO\"));\nconst headers = lines[headerIndex].split(\"|\").map(h => h.trim()).filter(h => h);\n\n// Filtra las filas después del header\nconst rows = lines.slice(headerIndex + 1).map(line => {\n  const cols = line.split(\"|\").map(c => c.trim()).filter(c => c);\n  if (cols.length < headers.length) return null; // descartar filas incompletas\n  let obj = {};\n  headers.forEach((h, i) => {\n    obj[h] = cols[i] || \"\";\n  });\n  return obj;\n}).filter(r => r);\n\n// Devuelve en formato JSON\nreturn rows.map(r => ({ json: r }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "adfcf50a-c909-4faa-b0a9-263bcf171d52",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:3000/api/inventario/cargar",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json.inventario}}\n\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        0
+      ],
+      "id": "14c2b092-1b9f-4349-8e23-ab9b6cfe14f8",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      inventario: items.map(item => item.json)\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        0
+      ],
+      "id": "8312d854-8001-4c5c-a925-445937e29148",
+      "name": "Code in JavaScript1"
     }
   ],
   "pinData": {},
@@ -137,7 +150,7 @@
       "main": [
         [
           {
-            "node": "Google Vision API",
+            "node": "Convert to File",
             "type": "main",
             "index": 0
           }
@@ -151,22 +164,44 @@
         ]
       ]
     },
-    "Process OCR Results": {
+    "Extract text": {
       "main": [
         [
           {
-            "node": "Success Response",
+            "node": "Code in JavaScript",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Google Vision API": {
+    "Convert to File": {
       "main": [
         [
           {
-            "node": "Process OCR Results",
+            "node": "Extract text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
             "type": "main",
             "index": 0
           }
@@ -174,14 +209,15 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "9d7a140e-0908-456c-9b9c-70a6fb6813ef",
+  "versionId": "5bfdd0e1-a8b8-4cee-86e5-41c15d59edc2",
   "meta": {
-    "instanceId": "66f6720522f547cb47e0e6a09537c44f018f47ea85f9c6ed8598639fef226adf"
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3a3bf45b8ba59b96bcd5c67e399e99a6ed3d7f3647582d8b3c18e746b2380c05"
   },
-  "id": "OCb9o4IW0Z8rywGJ",
+  "id": "m61OYxVwE5Fx6PrV",
   "tags": []
 }

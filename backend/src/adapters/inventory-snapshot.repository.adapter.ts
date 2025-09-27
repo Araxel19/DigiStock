@@ -37,4 +37,8 @@ export class InventorySnapshotRepositoryAdapter implements IInventorySnapshotRep
   async delete(criteria: any): Promise<any> {
     return await this.inventorySnapshotRepository.delete(criteria);
   }
+
+  async softDelete(criteria: any): Promise<any> {
+    return await this.inventorySnapshotRepository.softDelete(criteria);
+  }
 }

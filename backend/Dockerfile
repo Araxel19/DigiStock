@@ -9,11 +9,14 @@ COPY package*.json ./
 COPY backend/package.json ./backend/
 COPY business-logic/package.json ./business-logic/
 
+# Limpia node_modules y dist antes de instalar y construir
+RUN rm -rf node_modules dist
+
 # Instala TODAS las dependencias. Esto es clave.
 RUN npm install
 
 # Copia el resto del código
-COPY . .
+COPY . . 
 
 # Construye ambos proyectos
 RUN npm run build --workspace=business-logic

@@ -3,7 +3,7 @@ import { User, UserRole } from '../entities';
 import { CreateUserDto, UpdateUserDto } from '../dto';
 import { IUserRepository, IUserRoleRepository } from '../interfaces/repositories.interface';
 import * as bcrypt from 'bcryptjs';
-import { EntityManager } from 'typeorm';
+import { EntityManager, FindOneOptions } from 'typeorm';
 
 @Injectable()
 export class UserService {
@@ -13,6 +13,23 @@ export class UserService {
     @Inject('IUserRoleRepository')
     private readonly userRoleRepository: IUserRoleRepository,
   ) {}
+
+  private transformUser(user: User): any {
+    if (!user) return null;
+    const roles = user.userRoles ? user.userRoles.map(ur => ur.role.name) : [];
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      organizationId: user.organizationId,
+      isSuperAdmin: user.isSuperAdmin,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      deletedAt: user.deletedAt,
+      roles: roles,
+    };
+  }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     const { email, password, roleIds, ...userData } = createUserDto;
@@ -48,36 +65,41 @@ export class UserService {
   }
 
   async findAll(): Promise<User[]> {
-    return this.userRepository.find({
+    const users = await this.userRepository.find({
       relations: ['organization', 'userRoles', 'userRoles.role'],
-      select: {
-        password: false,
-      },
     });
+    return users.map(this.transformUser);
+  }
+
+  async findAllByOrganization(organizationId: string): Promise<User[]> {
+    const users = await this.userRepository.find({
+      where: { organizationId },
+      relations: ['organization', 'userRoles', 'userRoles.role'],
+    });
+    return users.map(this.transformUser);
   }
 
   async findById(id: string): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id },
       relations: ['organization', 'userRoles', 'userRoles.role'],
-      select: {
-        password: false,
-      },
     });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    return user;
+    return this.transformUser(user);
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findOne({ 
-        where: { email },
-        relations: ['organization', 'userRoles', 'userRoles.role'],
+    return this.userRepository.findOne({
+      where: { email },
+      relations: ['organization', 'userRoles', 'userRoles.role'],
     });
   }
+
+  
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     const { email, password, roleIds, ...userData } = updateUserDto;
@@ -112,7 +134,7 @@ export class UserService {
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.userRepository.delete(id);
+    const result = await this.userRepository.softDelete(id);
     if (result.affected === 0) {
       throw new NotFoundException('User not found');
     }

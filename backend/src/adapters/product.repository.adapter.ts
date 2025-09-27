@@ -38,4 +38,8 @@ export class ProductRepositoryAdapter implements IProductRepository {
   async delete(criteria: any): Promise<any> {
     return await this.productRepository.delete(criteria);
   }
+
+  async softDelete(criteria: any): Promise<any> {
+    return await this.productRepository.softDelete(criteria);
+  }
 }

@@ -37,4 +37,8 @@ export class LocationRepositoryAdapter implements ILocationRepository {
   async delete(criteria: any): Promise<any> {
     return await this.locationRepository.delete(criteria);
   }
+
+  async softDelete(criteria: any): Promise<any> {
+    return await this.locationRepository.softDelete(criteria);
+  }
 }

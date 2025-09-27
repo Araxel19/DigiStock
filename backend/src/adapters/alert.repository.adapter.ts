@@ -37,4 +37,8 @@ export class AlertRepositoryAdapter implements IAlertRepository {
   async delete(criteria: any): Promise<any> {
     return await this.alertRepository.delete(criteria);
   }
+
+  async softDelete(criteria: any): Promise<any> {
+    return await this.alertRepository.softDelete(criteria);
+  }
 }

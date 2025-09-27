@@ -38,5 +38,9 @@ export class PlanillaRepositoryAdapter implements IPlanillaRepository {
   async delete(criteria: any): Promise<any> {
     return await this.planillaRepository.delete(criteria);
   }
+
+  async softDelete(criteria: any): Promise<any> {
+    return await this.planillaRepository.softDelete(criteria);
+  }
 }
 

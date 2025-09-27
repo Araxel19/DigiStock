@@ -37,4 +37,8 @@ export class RoleRepositoryAdapter implements IRoleRepository {
   async delete(criteria: any): Promise<any> {
     return await this.roleRepository.delete(criteria);
   }
+
+  async softDelete(criteria: any): Promise<any> {
+    return await this.roleRepository.softDelete(criteria);
+  }
 }

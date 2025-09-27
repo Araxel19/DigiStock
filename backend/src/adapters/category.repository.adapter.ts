@@ -37,4 +37,8 @@ export class CategoryRepositoryAdapter implements ICategoryRepository {
   async delete(criteria: any): Promise<any> {
     return await this.categoryRepository.delete(criteria);
   }
+
+  async softDelete(criteria: any): Promise<any> {
+    return await this.categoryRepository.softDelete(criteria);
+  }
 }

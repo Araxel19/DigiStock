@@ -11,17 +11,41 @@ export class OrganizationService {
     private readonly organizationRepository: IOrganizationRepository,
   ) {}
 
+  private transformOrganization(org: Organization): any {
+    if (!org) return null;
+    let details = {};
+    try {
+      // The details field might be a JSON string from the DB
+      if (typeof org.details === 'string') {
+        details = JSON.parse(org.details);
+      } else if (typeof org.details === 'object' && org.details !== null) {
+        details = org.details;
+      }
+    } catch (e) {
+      console.error('Failed to parse organization details', e);
+    }
+
+    return {
+      ...org,
+      details,
+      isActive: org.deletedAt === null,
+      memberCount: org.users?.length || 0, // Calculate member count
+    };
+  }
+
   create(createOrganizationDto: CreateOrganizationDto) {
     const organization = this.organizationRepository.create(createOrganizationDto);
     return this.organizationRepository.save(organization);
   }
 
-  findAll() {
-    return this.organizationRepository.find();
+  async findAll() {
+    const orgs = await this.organizationRepository.find({ relations: ['users'] });
+    return orgs.map(org => this.transformOrganization(org));
   }
 
-  findOne(id: string) {
-    return this.organizationRepository.findOne({ where: { id } });
+  async findOne(id: string) {
+    const org = await this.organizationRepository.findOne({ where: { id }, relations: ['users'] });
+    return this.transformOrganization(org);
   }
 
   update(id: string, updateOrganizationDto: UpdateOrganizationDto) {
@@ -29,6 +53,6 @@ export class OrganizationService {
   }
 
   remove(id: string) {
-    return this.organizationRepository.delete({ id });
+    return this.organizationRepository.softDelete({ id });
   }
 }

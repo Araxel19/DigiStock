@@ -38,6 +38,10 @@ export class InventoryService {
     return this.businessInventoryService.findAllPlanillas(organizationId);
   }
 
+  findPlanillasByUserId(userId: string) {
+    return this.businessInventoryService.findPlanillasByUserId(userId);
+  }
+
   findPlanillaById(id: string) {
     return this.businessInventoryService.findPlanillaById(id);
   }

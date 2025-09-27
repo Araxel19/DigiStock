@@ -79,9 +79,18 @@ export class InventoryService {
     return this.planillaRepository.save(planilla);
   }
 
-  async findAllPlanillas(organizationId: string): Promise<Planilla[]> {
-    return this.planillaRepository.find({
+    async findAllPlanillas(organizationId: string): Promise<any[]> {
+    const planillas = await this.planillaRepository.find({
       where: { organizationId },
+      order: { createdAt: 'DESC' },
+      relations: ['user'],
+    });
+    return planillas.map(p => ({ ...p, user: p.user ? { id: p.user.id, firstName: p.user.firstName, lastName: p.user.lastName } : null }));
+  }
+
+  async findPlanillasByUserId(userId: string): Promise<Planilla[]> {
+    return this.planillaRepository.find({
+      where: { userId },
       order: { createdAt: 'DESC' },
       relations: ['user'],
     });

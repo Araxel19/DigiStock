@@ -16,6 +16,10 @@ export class UsersService {
     return await this.businessUserService.findAll();
   }
 
+  async findAllByOrganization(organizationId: string): Promise<any[]> {
+    return await this.businessUserService.findAllByOrganization(organizationId);
+  }
+
   async findById(id: string): Promise<any> {
     return await this.businessUserService.findById(id);
   }

@@ -37,4 +37,8 @@ export class AuditLogRepositoryAdapter implements IAuditLogRepository {
   async delete(criteria: any): Promise<any> {
     return await this.auditLogRepository.delete(criteria);
   }
+
+  async softDelete(criteria: any): Promise<any> {
+    return await this.auditLogRepository.softDelete(criteria);
+  }
 }

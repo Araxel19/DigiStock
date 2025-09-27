@@ -79,7 +79,15 @@ const handleLogin = async () => {
     await authStore.login(form.value)
     router.push('/dashboard')
   } catch (err: any) {
-    error.value = err.response?.data?.message || 'Error al iniciar sesión'
+    if (err.response?.data?.message) {
+      if (Array.isArray(err.response.data.message)) {
+        error.value = err.response.data.message.join(', ');
+      } else {
+        error.value = err.response.data.message;
+      }
+    } else {
+      error.value = 'Error al iniciar sesión';
+    }
   } finally {
     loading.value = false
   }

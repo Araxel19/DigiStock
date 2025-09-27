@@ -1,11 +1,20 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/store/auth'
 import Dashboard from '@/views/Dashboard.vue'
 import Login from '@/views/Login.vue'
 import UploadPlanilla from '@/views/UploadPlanilla.vue'
 import InventoryList from '@/views/InventoryList.vue'
 
-const routes = [
+declare module 'vue-router' {
+    interface RouteMeta {
+        requiresAuth?: boolean;
+        requiresGuest?: boolean;
+        requiresSuperAdmin?: boolean;
+        roles?: string[];
+    }
+}
+
+const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
     redirect: '/dashboard'
@@ -26,20 +35,26 @@ const routes = [
     path: '/upload',
     name: 'UploadPlanilla',
     component: UploadPlanilla,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, roles: ['org_admin', 'supervisor', 'data_entry'] }
   },
   {
     path: '/inventory',
     name: 'InventoryList',
     component: InventoryList,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, roles: ['org_admin', 'supervisor'] }
   }
   ,
   {
     path: '/users',
     name: 'UserManagement',
     component: () => import('@/views/UserManagement.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true }
+    meta: { requiresAuth: true, roles: ['org_admin', 'super_admin'] }
+  },
+  {
+    path: '/organizations',
+    name: 'OrganizationManagement',
+    component: () => import('@/views/OrganizationManagement.vue'),
+    meta: { requiresAuth: true, requiresSuperAdmin: true }
   }
 ]
 
@@ -52,14 +67,36 @@ router.beforeEach((to, _from, next) => {
   const authStore = useAuthStore()
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next('/login')
-  } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    next('/dashboard')
-  } else if (to.meta.requiresAdmin && !(authStore.user?.roles.includes('org_admin') || authStore.user?.isSuperAdmin)) {
-    next('/dashboard')
-  } else {
-    next()
+    return next('/login');
   }
-})
+
+  if (to.meta.requiresGuest && authStore.isAuthenticated) {
+    return next('/dashboard');
+  }
+
+  // Role-based access control
+  if (to.meta.roles) {
+    const user = authStore.user;
+    if (!user) {
+      return next('/login');
+    }
+
+    const hasRole = user.roles.some(role => to.meta.roles!.includes(role));
+
+    if (authStore.isSuperAdmin || hasRole) {
+      return next();
+    } else {
+      // Redirect to a "not authorized" page or dashboard
+      return next('/dashboard');
+    }
+  }
+
+  // Super admin specific routes
+  if (to.meta.requiresSuperAdmin && !authStore.isSuperAdmin) {
+    return next('/dashboard');
+  }
+
+  next();
+});
 
 export default router

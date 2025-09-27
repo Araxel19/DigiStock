@@ -36,6 +36,10 @@ export class UserRepositoryAdapter implements IUserRepository {
   }
 
   async delete(criteria: any): Promise<any> {
-    return await this.userRepository.delete(criteria);
+    return await this.userRepository.softDelete(criteria);
+  }
+
+  async softDelete(criteria: any): Promise<any> {
+    return await this.userRepository.softDelete(criteria);
   }
 }

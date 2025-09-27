@@ -37,4 +37,8 @@ export class OrganizationRepositoryAdapter implements IOrganizationRepository {
   async delete(criteria: any): Promise<any> {
     return await this.organizationRepository.delete(criteria);
   }
+
+  async softDelete(criteria: any): Promise<any> {
+    return await this.organizationRepository.softDelete(criteria);
+  }
 }

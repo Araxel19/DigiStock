@@ -37,4 +37,8 @@ export class ReportRepositoryAdapter implements IReportRepository {
   async delete(criteria: any): Promise<any> {
     return await this.reportRepository.delete(criteria);
   }
+
+  async softDelete(criteria: any): Promise<any> {
+    return await this.reportRepository.softDelete(criteria);
+  }
 }

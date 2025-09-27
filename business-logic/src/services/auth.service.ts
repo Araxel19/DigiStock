@@ -1,17 +1,15 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Inject } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { UserService } from './user.service';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { LoginDto } from '../dto/login.dto';
-
-export interface IJwtService {
-  sign(payload: any): string;
-}
+import { IJwtService } from '../interfaces/repositories.interface';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UserService,
+    @Inject('IJwtService')
     private readonly jwtService: IJwtService,
   ) {}
 
@@ -30,36 +28,40 @@ export class AuthService {
     const user = await this.validateUser(loginDto.email, loginDto.password);
     
     if (!user) {
-      throw new UnauthorizedException('Credenciales inválidas');
+      throw new UnauthorizedException('Invalid credentials');
     }
+
+    const roles = user.userRoles.map(userRole => userRole.role.name);
 
     const payload = { 
       email: user.email, 
       sub: user.id, 
-      role: user.role 
+      organizationId: user.organizationId,
+      isSuperAdmin: user.isSuperAdmin,
+      roles: roles,
     };
 
-    return {
-      access_token: this.jwtService.sign(payload),
-      user: {
+    // The user object returned to the frontend should also be updated
+    const userResponse = {
         id: user.id,
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role,
-      },
+        organizationId: user.organizationId,
+        isSuperAdmin: user.isSuperAdmin,
+        roles: roles,
+    };
+
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: userResponse,
     };
   }
 
   async register(createUserDto: CreateUserDto) {
-    const hashedPassword = await bcrypt.hash(createUserDto.password, 12);
-    
-    const user = await this.userService.create({
-      ...createUserDto,
-      password: hashedPassword,
-    });
-
-    const { password, ...result } = user;
-    return result;
+    // The create method in user service already hashes the password
+    const user = await this.userService.create(createUserDto);
+    // The create method already returns the user without the password
+    return user;
   }
 }

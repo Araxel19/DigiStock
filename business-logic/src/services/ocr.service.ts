@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Inject } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -13,7 +13,7 @@ export class OcrService {
   private httpClient: AxiosInstance;
 
   constructor(
-    private readonly n8nConfig: IN8nConfig,
+    @Inject('IN8nConfig') private readonly n8nConfig: IN8nConfig,
   ) {
     this.httpClient = axios.create({
       timeout: 60000, // Increased timeout for base64 upload
@@ -23,7 +23,7 @@ export class OcrService {
     });
   }
 
-  async processImage(imagePath: string): Promise<any> {
+  async processImage(imagePath: string, planillaId: string): Promise<any> {
     try {
       // Construct the full path. Assuming imagePath is relative to the project root.
       // This might need adjustment depending on where the app runs.
@@ -42,6 +42,7 @@ export class OcrService {
       const response = await this.httpClient.post(webhookUrl, {
         imageBase64: imageBase64,
         originalPath: imagePath,
+        planillaId: planillaId,
         timestamp: new Date().toISOString(),
       });
 

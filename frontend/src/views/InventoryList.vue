@@ -58,8 +58,8 @@
               class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
             >
               <option value="">Todas las categorías</option>
-              <option v-for="category in categories" :key="category" :value="category">
-                {{ category }}
+              <option v-for="category in categories" :key="category.id" :value="category.id">
+                {{ category.name }}
               </option>
             </select>
             <button
@@ -116,12 +116,6 @@
                 <h3 class="text-lg font-semibold text-gray-900 mb-1">{{ product.name }}</h3>
                 <p class="text-sm text-gray-500 font-mono">{{ product.code }}</p>
               </div>
-              <span
-                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                :class="product.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
-              >
-                {{ product.isActive ? 'Activo' : 'Inactivo' }}
-              </span>
             </div>
 
             <div v-if="product.description" class="mb-4">
@@ -129,12 +123,6 @@
             </div>
 
             <div class="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wide">Stock</p>
-                <p class="text-lg font-semibold" :class="product.stock > 0 ? 'text-green-600' : 'text-red-600'">
-                  {{ product.stock }}
-                </p>
-              </div>
               <div>
                 <p class="text-xs text-gray-500 uppercase tracking-wide">Precio</p>
                 <p class="text-lg font-semibold text-gray-900">
@@ -148,14 +136,14 @@
                 <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
                 </svg>
-                {{ product.category }}
+                {{ product.category.name }}
               </div>
               <div v-if="product.location" class="flex items-center text-xs text-gray-500">
                 <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                 </svg>
-                {{ product.location }}
+                {{ product.location.name }}
               </div>
             </div>
 
@@ -200,7 +188,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppLayout from '@/components/AppLayout.vue'
 import { useInventoryStore } from '@/store/inventory'
-import type { Product } from '@/types/inventory'
+import type { Product, Category } from '@/types/inventory'
 
 const route = useRoute()
 const inventoryStore = useInventoryStore()
@@ -215,8 +203,14 @@ const successMessage = ref('')
 // Computed
 const products = computed(() => inventoryStore.products)
 const categories = computed(() => {
-  const cats = products.value.map(p => p.category).filter(Boolean)
-  return [...new Set(cats)]
+  const cats = products.value.map(p => p.category).filter(Boolean) as Category[];
+  const uniqueCategories = cats.reduce((acc, cat) => {
+    if (!acc.find(c => c.id === cat.id)) {
+      acc.push(cat);
+    }
+    return acc;
+  }, [] as Category[]);
+  return uniqueCategories;
 })
 
 const filteredProducts = computed(() => {
@@ -231,7 +225,7 @@ const filteredProducts = computed(() => {
   }
 
   if (selectedCategory.value) {
-    filtered = filtered.filter(product => product.category === selectedCategory.value)
+    filtered = filtered.filter(product => product.category?.id === selectedCategory.value)
   }
 
   return filtered

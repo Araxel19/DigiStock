@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, EntityManager } from 'typeorm';
 import { User } from 'digistock-business-logic';
 import { IUserRepository } from 'digistock-business-logic';
 
@@ -10,6 +10,10 @@ export class UserRepositoryAdapter implements IUserRepository {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
+
+  get manager(): EntityManager {
+    return this.userRepository.manager;
+  }
 
   create(entity: Partial<User>): User {
     return this.userRepository.create(entity);

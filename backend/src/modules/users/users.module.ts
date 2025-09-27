@@ -1,13 +1,11 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
-import { User } from 'digistock-business-logic';
-import { UserRepositoryAdapter } from '../../adapters/user.repository.adapter';
+import { BusinessLogicModule } from '../../business-logic/business-logic.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User])],
-  providers: [UsersService, UserRepositoryAdapter],
+  imports: [BusinessLogicModule],
+  providers: [UsersService],
   controllers: [UsersController],
   exports: [UsersService],
 })

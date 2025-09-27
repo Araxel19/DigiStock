@@ -1,38 +1,34 @@
 import { Injectable } from '@nestjs/common';
-import { UserService } from 'digistock-business-logic';
-import { UserRepositoryAdapter } from '../../adapters/user.repository.adapter';
+import { UserService as BusinessUserService } from 'digistock-business-logic';
+import { CreateUserDto, UpdateUserDto } from './dto';
 
 @Injectable()
 export class UsersService {
-  private userService: UserService;
-
   constructor(
-    private readonly userRepositoryAdapter: UserRepositoryAdapter,
-  ) {
-    this.userService = new UserService(this.userRepositoryAdapter);
-  }
+    private readonly businessUserService: BusinessUserService,
+  ) {}
 
-  async create(createUserDto: any): Promise<any> {
-    return await this.userService.create(createUserDto);
+  async create(createUserDto: CreateUserDto): Promise<any> {
+    return await this.businessUserService.create(createUserDto);
   }
 
   async findAll(): Promise<any[]> {
-    return await this.userService.findAll();
+    return await this.businessUserService.findAll();
   }
 
   async findById(id: string): Promise<any> {
-    return await this.userService.findById(id);
+    return await this.businessUserService.findById(id);
   }
 
   async findByEmail(email: string): Promise<any | null> {
-    return await this.userService.findByEmail(email);
+    return await this.businessUserService.findByEmail(email);
   }
 
-  async update(id: string, updateUserDto: any): Promise<any> {
-    return await this.userService.update(id, updateUserDto);
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<any> {
+    return await this.businessUserService.update(id, updateUserDto);
   }
 
   async remove(id: string): Promise<void> {
-    return await this.userService.remove(id);
+    return await this.businessUserService.remove(id);
   }
 }

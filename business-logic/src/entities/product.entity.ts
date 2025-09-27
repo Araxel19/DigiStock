@@ -4,40 +4,60 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Unique,
 } from 'typeorm';
+import { Organization } from './organization.entity';
+import { Category } from './category.entity';
+import { Location } from './location.entity';
 
 @Entity('products')
+@Unique(['organizationId', 'code'])
 export class Product {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true })
+  @Column({ type: 'uuid', name: 'organization_id' })
+  organizationId: string;
+
+  @ManyToOne(() => Organization, organization => organization.products)
+  @JoinColumn({ name: 'organization_id' })
+  organization: Organization;
+
+  @Column({ type: 'varchar', length: 50 })
   code: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 255 })
   name: string;
 
-  @Column('text', { nullable: true })
+  @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column('decimal', { precision: 10, scale: 2 })
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   price: number;
 
-  @Column('int', { default: 0 })
-  stock: number;
+  @Column({ type: 'uuid', name: 'category_id', nullable: true })
+  categoryId: string;
 
-  @Column({ nullable: true })
-  category: string;
+  @ManyToOne(() => Category, category => category.products, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'category_id' })
+  category: Category;
 
-  @Column({ nullable: true })
-  location: string;
+  @Column({ type: 'uuid', name: 'location_id', nullable: true })
+  locationId: string;
 
-  @Column({ default: true })
-  isActive: boolean;
+  @ManyToOne(() => Location, location => location.products, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'location_id' })
+  location: Location;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  deletedAt: Date;
 }

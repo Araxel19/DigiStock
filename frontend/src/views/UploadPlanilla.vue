@@ -224,6 +224,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/AppLayout.vue'
 import { inventoryService } from '@/services/inventory.service'
+import { useAuthStore } from '@/store/auth'
 
 const router = useRouter()
 
@@ -374,34 +375,39 @@ const removeProduct = (index: number) => {
 }
 
 const saveProducts = async () => {
-  if (!ocrResults.value?.extractedProducts) return
+  if (!ocrResults.value?.extractedProducts) return;
+  const authStore = useAuthStore();
 
-  isSaving.value = true
+  if (!authStore.user) {
+    errorMessage.value = 'Debe iniciar sesión para guardar productos.';
+    isSaving.value = false;
+    return;
+  }
+
+  isSaving.value = true;
   try {
-    // Save each product to inventory
     for (const product of ocrResults.value.extractedProducts) {
       if (product.code && product.name) {
         await inventoryService.createProduct({
           code: product.code,
           name: product.name,
-          stock: product.quantity || 0,
           price: product.price || 0,
-          description: `Importado desde planilla OCR - ${new Date().toLocaleDateString()}`
-        })
+          description: `Importado desde planilla OCR - ${new Date().toLocaleDateString()}`,
+          organizationId: authStore.user.organizationId,
+        });
       }
     }
 
-    // Redirect to inventory with success message
     router.push({
       path: '/inventory',
-      query: { success: 'Productos guardados exitosamente' }
-    })
+      query: { success: 'Productos guardados exitosamente' },
+    });
   } catch (error: any) {
-    errorMessage.value = error.message || 'Error al guardar productos'
+    errorMessage.value = error.message || 'Error al guardar productos';
   } finally {
-    isSaving.value = false
+    isSaving.value = false;
   }
-}
+};
 
 // Utility functions
 const formatFileSize = (bytes: number): string => {

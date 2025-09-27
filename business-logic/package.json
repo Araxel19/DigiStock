@@ -10,7 +10,7 @@
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
-    "clean": "rm -rf dist",
+    "clean": "rimraf dist",
     "prebuild": "npm run clean"
   },
   "dependencies": {
@@ -21,7 +21,8 @@
     "typeorm": "^0.3.20",
     "bcryptjs": "^2.4.3",
     "reflect-metadata": "^0.1.13",
-    "axios": "^1.6.2"
+    "axios": "^1.6.2",
+    "rimraf": "^5.0.0"
   },
   "devDependencies": {
     "typescript": "^5.1.3",

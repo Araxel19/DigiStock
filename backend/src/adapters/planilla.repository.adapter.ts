@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, EntityManager } from 'typeorm';
 import { Planilla } from 'digistock-business-logic';
 import { IPlanillaRepository } from 'digistock-business-logic';
 
@@ -10,6 +10,10 @@ export class PlanillaRepositoryAdapter implements IPlanillaRepository {
     @InjectRepository(Planilla)
     private readonly planillaRepository: Repository<Planilla>,
   ) {}
+
+  get manager(): EntityManager {
+    return this.planillaRepository.manager;
+  }
 
   create(entity: Partial<Planilla>): Planilla {
     return this.planillaRepository.create(entity);
@@ -35,3 +39,4 @@ export class PlanillaRepositoryAdapter implements IPlanillaRepository {
     return await this.planillaRepository.delete(criteria);
   }
 }
+

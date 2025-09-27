@@ -6,22 +6,29 @@ import {
   UseInterceptors,
   UseGuards,
   Body,
+  Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
-import { File, diskStorage } from 'multer';
+import { diskStorage } from 'multer';
 import { extname } from 'path';
-import { OcrServiceAdapter } from './ocr.service';
+import { OcrService } from './ocr.service';
+import { InventoryService } from '../inventory/inventory.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CreatePlanillaDto } from '../inventory/dto';
+import { PlanillaStatus } from '../inventory/dto/create-planilla.dto';
 
 @ApiTags('OCR')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('ocr')
 export class OcrController {
-  constructor(private readonly ocrService: OcrServiceAdapter) {}
+  constructor(
+    private readonly ocrService: OcrService,
+    private readonly inventoryService: InventoryService,
+  ) {}
 
-  @ApiOperation({ summary: 'Procesar imagen con OCR' })
+  @ApiOperation({ summary: 'Process image with OCR' })
   @ApiConsumes('multipart/form-data')
   @Post('process')
   @UseInterceptors(
@@ -38,7 +45,7 @@ export class OcrController {
       }),
       fileFilter: (req, file, cb) => {
         if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
-          return cb(new Error('Solo se permiten imágenes'), false);
+          return cb(new Error('Only image files are allowed!'), false);
         }
         cb(null, true);
       },
@@ -47,15 +54,25 @@ export class OcrController {
       },
     }),
   )
-  async processImage(@UploadedFile() file: File) {
+  async processImage(@UploadedFile() file: Express.Multer.File, @Req() req) {
     if (!file) {
-      throw new Error('No se proporcionó archivo');
+      throw new Error('No file provided');
     }
 
-    return await this.ocrService.processImage(file.path);
+    const createPlanillaDto: CreatePlanillaDto = {
+      fileName: file.originalname,
+      filePath: file.path,
+      userId: req.user.userId,
+      organizationId: req.user.organizationId,
+      status: PlanillaStatus.RECIBIDO,
+    };
+
+    const planilla = await this.inventoryService.createPlanilla(createPlanillaDto);
+
+    return this.ocrService.processImage(file.path, planilla.id);
   }
 
-  @ApiOperation({ summary: 'Enviar datos a flujo n8n' })
+  @ApiOperation({ summary: 'Send data to n8n workflow' })
   @Post('send-to-n8n')
   async sendToN8n(
     @Body('data') data: any,
@@ -64,7 +81,7 @@ export class OcrController {
     return await this.ocrService.sendToN8nWebhook(data, workflowId);
   }
 
-  @ApiOperation({ summary: 'Verificar estado de n8n' })
+  @ApiOperation({ summary: 'Check n8n status' })
   @Get('n8n-status')
   async checkN8nStatus() {
     return await this.ocrService.checkN8nStatus();

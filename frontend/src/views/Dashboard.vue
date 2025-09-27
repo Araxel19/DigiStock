@@ -21,7 +21,18 @@
     </nav>
 
     <!-- Main Content -->
-    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 relative">
+      <!-- Loading Overlay -->
+      <div v-if="isLoading" class="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
+        <div class="flex items-center space-x-2">
+          <svg class="animate-spin h-5 w-5 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span class="text-gray-600">Cargando datos...</span>
+        </div>
+      </div>
+
       <!-- Header -->
       <div class="mb-8">
         <h2 class="text-2xl font-bold text-gray-900 mb-2">Dashboard</h2>
@@ -125,7 +136,7 @@
 
         <!-- Solo visible para admin -->
         <router-link
-          v-if="authStore.user?.role === 'admin'"
+          v-if="authStore.isAdmin"
           to="/users"
           class="bg-white p-6 rounded-xl shadow-soft hover:shadow-lg transition-all cursor-pointer group"
         >
@@ -152,9 +163,15 @@
           <div class="space-y-4">
             <div v-for="activity in recentActivity" :key="activity.id" class="flex items-center space-x-3">
               <div class="flex-shrink-0">
-                <div class="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                  <svg class="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center" :class="{
+                  'bg-primary-100': activity.type === 'planilla',
+                  'bg-green-100': activity.type === 'product',
+                }">
+                  <svg v-if="activity.type === 'planilla'" class="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                  </svg>
+                  <svg v-else-if="activity.type === 'product'" class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                   </svg>
                 </div>
               </div>
@@ -165,6 +182,9 @@
               <div class="flex-shrink-0 text-sm text-gray-400">
                 {{ activity.time }}
               </div>
+            </div>
+            <div v-if="!isLoading && recentActivity.length === 0" class="text-center text-gray-500 py-4">
+              No hay actividad reciente.
             </div>
           </div>
         </div>
@@ -177,6 +197,8 @@
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/store/auth'
 import { useRouter } from 'vue-router'
+import { inventoryService } from '@/services/inventory.service'
+//import type { Product, Planilla } from '@/types/inventory'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -187,34 +209,64 @@ function logoutAndRedirect() {
 }
 
 const stats = ref({
-  totalProducts: 156,
-  processedPlanillas: 24,
-  pendingPlanillas: 3,
-  ocrSuccessRate: 94
+  totalProducts: 0,
+  processedPlanillas: 0,
+  pendingPlanillas: 0,
+  ocrSuccessRate: 0 // This will remain 0 for now
 })
 
-const recentActivity = ref([
-  {
-    id: 1,
-    title: 'Planilla procesada',
-    description: 'planilla_inventario_2024.jpg - 15 productos extraídos',
-    time: 'hace 2 horas'
-  },
-  {
-    id: 2,
-    title: 'Nuevo producto agregado',
-    description: 'PROD004 - Monitor Samsung 24"',
-    time: 'hace 4 horas'
-  },
-  {
-    id: 3,
-    title: 'Flujo n8n ejecutado',
-    description: 'Sincronización automática completada',
-    time: 'hace 6 horas'
+const recentActivity = ref<any[]>([])
+const isLoading = ref(true)
+
+async function loadDashboardData() {
+  isLoading.value = true
+  try {
+    const [products, planillas] = await Promise.all([
+      inventoryService.getProducts(),
+      inventoryService.getPlanillas()
+    ])
+
+    // Calculate stats
+    stats.value.totalProducts = products.length
+    stats.value.processedPlanillas = planillas.filter(p => p.status === 'procesado').length
+    stats.value.pendingPlanillas = planillas.filter(p => p.status === 'validacion_pendiente').length
+
+    // Generate recent activity
+    const recentPlanillas = planillas
+      .filter(p => p.status === 'procesado' && p.processedAt)
+      .sort((a, b) => new Date(b.processedAt!).getTime() - new Date(a.processedAt!).getTime())
+      .slice(0, 2)
+      .map(p => ({
+        id: `p-${p.id}`,
+        type: 'planilla',
+        title: 'Planilla procesada',
+        description: `${p.fileName} - ${p.items.length} productos`,
+        time: new Date(p.processedAt!).toLocaleString()
+      }))
+
+    const recentProducts = products
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 3)
+      .map(p => ({
+        id: `prod-${p.id}`,
+        type: 'product',
+        title: 'Nuevo producto agregado',
+        description: `${p.code} - ${p.name}`,
+        time: new Date(p.createdAt).toLocaleString()
+      }))
+    
+    recentActivity.value = [...recentPlanillas, ...recentProducts]
+      .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+      .slice(0, 5)
+
+  } catch (error) {
+    console.error('Error loading dashboard data:', error)
+  } finally {
+    isLoading.value = false
   }
-])
+}
 
 onMounted(() => {
-  // Cargar estadísticas reales aquí
+  loadDashboardData()
 })
 </script>

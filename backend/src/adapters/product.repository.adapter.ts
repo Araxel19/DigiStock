@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, EntityManager } from 'typeorm';
 import { Product } from 'digistock-business-logic';
 import { IProductRepository } from 'digistock-business-logic';
 
@@ -10,6 +10,10 @@ export class ProductRepositoryAdapter implements IProductRepository {
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
   ) {}
+
+  get manager(): EntityManager {
+    return this.productRepository.manager;
+  }
 
   create(entity: Partial<Product>): Product {
     return this.productRepository.create(entity);

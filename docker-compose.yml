@@ -15,15 +15,6 @@ services:
     networks:
       - digistock_network
 
-  business-logic:
-    build:
-      context: ./business-logic
-      dockerfile: Dockerfile
-    container_name: digistock_business_logic
-    restart: unless-stopped
-    networks:
-      - digistock_network
-
   backend:
     build:
       context: .
@@ -39,7 +30,6 @@ services:
       - N8N_WEBHOOK_URL=http://n8n:5678/webhook-test
     depends_on:
       - postgres
-      - business-logic
       - n8n
     volumes:
       - ./uploads:/app/uploads
@@ -61,6 +51,7 @@ services:
     volumes:
       - n8n_data:/home/node/.n8n
       - ./n8n_flows:/home/node/.n8n/workflows
+      - ./uploads:/app/uploads
     networks:
       - digistock_network
   frontend:

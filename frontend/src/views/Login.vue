@@ -64,7 +64,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const form = ref({
-  email: 'admin@digistock.com',
+  email: 'superadmin@digistock.com',
   password: 'admin123'
 })
 

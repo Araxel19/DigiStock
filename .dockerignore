@@ -1,0 +1,19 @@
+# Dependencias
+node_modules
+npm-debug.log
+
+# Carpetas de compilación
+dist
+build
+
+# Archivos de entorno (nunca deben ir en la imagen)
+.env
+.env.local
+
+# Git
+.git
+
+# Otros
+.vscode
+**/__pycache__
+**/*.pyc

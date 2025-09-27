@@ -1,92 +1,114 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Repository, Like } from 'typeorm';
-import { Product } from '../entities/product.entity';
-import { Planilla } from '../entities/planilla.entity';
-import { CreateProductDto } from '../dto/create-product.dto';
-import { CreatePlanillaDto } from '../dto/create-planilla.dto';
-
-export interface IProductRepository {
-  create(entity: Partial<Product>): Product;
-  save(entity: Product): Promise<Product>;
-  find(options?: any): Promise<Product[]>;
-  findOne(options: any): Promise<Product | null>;
-  update(criteria: any, partialEntity: any): Promise<any>;
-  delete(criteria: any): Promise<any>;
-}
-
-export interface IPlanillaRepository {
-  create(entity: Partial<Planilla>): Planilla;
-  save(entity: Planilla): Promise<Planilla>;
-  find(options?: any): Promise<Planilla[]>;
-  findOne(options: any): Promise<Planilla | null>;
-  update(criteria: any, partialEntity: any): Promise<any>;
-  delete(criteria: any): Promise<any>;
-}
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
+import {
+  Product,
+  Planilla,
+  PlanillaItem,
+  Category,
+  Location,
+} from '../entities';
+import {
+  CreateProductDto,
+  UpdateProductDto,
+  CreatePlanillaDto,
+  UpdatePlanillaDto,
+} from '../dto';
+import {
+  IProductRepository,
+  IPlanillaRepository,
+  IPlanillaItemRepository,
+  ICategoryRepository,
+  ILocationRepository,
+} from '../interfaces/repositories.interface';
+import { Like } from 'typeorm';
 
 @Injectable()
 export class InventoryService {
   constructor(
+    @Inject('IProductRepository')
     private readonly productRepository: IProductRepository,
+    @Inject('IPlanillaRepository')
     private readonly planillaRepository: IPlanillaRepository,
-  ) { }
+    @Inject('IPlanillaItemRepository')
+    private readonly planillaItemRepository: IPlanillaItemRepository,
+    @Inject('ICategoryRepository')
+    private readonly categoryRepository: ICategoryRepository,
+    @Inject('ILocationRepository')
+    private readonly locationRepository: ILocationRepository,
+  ) {}
 
   // Product methods
   async createProduct(createProductDto: CreateProductDto): Promise<Product> {
     const product = this.productRepository.create(createProductDto);
-    return await this.productRepository.save(product);
+    return this.productRepository.save(product);
   }
 
-  async findAllProducts(search?: string): Promise<Product[]> {
+  async findAllProducts(organizationId: string, search?: string): Promise<Product[]> {
     const where = search
       ? [
-        { name: Like(`%${search}%`) },
-        { code: Like(`%${search}%`) },
-      ]
-      : {};
+          { name: Like(`%${search}%`), organizationId },
+          { code: Like(`%${search}%`), organizationId },
+        ]
+      : { organizationId };
 
-    return await this.productRepository.find({ where });
+    return this.productRepository.find({ where, relations: ['category', 'location'] });
   }
 
   async findProductById(id: string): Promise<Product> {
-    const product = await this.productRepository.findOne({ where: { id } });
-
+    const product = await this.productRepository.findOne({ where: { id }, relations: ['category', 'location'] });
     if (!product) {
-      throw new NotFoundException('Producto no encontrado');
+      throw new NotFoundException('Product not found');
     }
-
     return product;
+  }
+
+  async updateProduct(id: string, updateProductDto: UpdateProductDto): Promise<Product> {
+    await this.productRepository.update(id, updateProductDto);
+    return this.findProductById(id);
+  }
+
+  async removeProduct(id: string): Promise<void> {
+    const result = await this.productRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException('Product not found');
+    }
   }
 
   // Planilla methods
   async createPlanilla(createPlanillaDto: CreatePlanillaDto): Promise<Planilla> {
-    const planilla = this.planillaRepository.create({
-      ...createPlanillaDto,
-      status: createPlanillaDto.status as any,
-    });
-    return await this.planillaRepository.save(planilla);
+    const planilla = this.planillaRepository.create(createPlanillaDto);
+    return this.planillaRepository.save(planilla);
   }
 
-  async findAllPlanillas(): Promise<Planilla[]> {
-    return await this.planillaRepository.find({
+  async findAllPlanillas(organizationId: string): Promise<Planilla[]> {
+    return this.planillaRepository.find({
+      where: { organizationId },
       order: { createdAt: 'DESC' },
+      relations: ['user'],
     });
   }
 
   async findPlanillaById(id: string): Promise<Planilla> {
-    const planilla = await this.planillaRepository.findOne({ where: { id } });
-
+    const planilla = await this.planillaRepository.findOne({
+      where: { id },
+      relations: ['user', 'organization', 'items', 'items.correctedProduct'],
+    });
     if (!planilla) {
-      throw new NotFoundException('Planilla no encontrada');
+      throw new NotFoundException('Planilla not found');
     }
-
     return planilla;
   }
 
-  async updatePlanillaStatus(id: string, status: string): Promise<Planilla> {
-    await this.planillaRepository.update(id, {
-      status: status as any,
-      processedAt: status === 'processed' ? new Date() : null
-    });
+  async updatePlanilla(id: string, updatePlanillaDto: UpdatePlanillaDto): Promise<Planilla> {
+    await this.planillaRepository.update(id, updatePlanillaDto);
     return this.findPlanillaById(id);
   }
+  
+  async removePlanilla(id: string): Promise<void> {
+    const result = await this.planillaRepository.delete(id);
+    if (result.affected === 0) {
+        throw new NotFoundException('Planilla not found');
+    }
+  }
+
+  // ... other methods for categories, locations, planillaItems
 }

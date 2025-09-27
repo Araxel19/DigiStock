@@ -1,5 +1,6 @@
 import { api } from './api'
 import type { LoginCredentials, LoginResponse } from '@/types/auth'
+import type { FrontendCreateUserDto } from '@/types/user'
 
 export const authService = {
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
@@ -7,13 +8,8 @@ export const authService = {
     return response.data
   },
 
-  async register(userData: any) {
-    const response = await api.post('/auth/register', userData)
+  async register(userData: FrontendCreateUserDto) {
+    const response = await api.post('/users', userData) // The endpoint is now /users
     return response.data
   },
-
-  async getProfile() {
-    const response = await api.get('/auth/profile')
-    return response.data
-  }
 }

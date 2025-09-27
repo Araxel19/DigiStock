@@ -1,15 +1,12 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { InventoryServiceAdapter } from './inventory.service';
 import { InventoryController } from './inventory.controller';
-import { Product, Planilla } from 'digistock-business-logic';
-import { ProductRepositoryAdapter } from '../../adapters/product.repository.adapter';
-import { PlanillaRepositoryAdapter } from '../../adapters/planilla.repository.adapter';
+import { InventoryService } from './inventory.service';
+import { BusinessLogicModule } from '../../business-logic/business-logic.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Product, Planilla])],
-  providers: [InventoryServiceAdapter, ProductRepositoryAdapter, PlanillaRepositoryAdapter],
+  imports: [BusinessLogicModule],
+  providers: [InventoryService],
   controllers: [InventoryController],
-  exports: [InventoryServiceAdapter],
+  exports: [InventoryService],
 })
 export class InventoryModule {}

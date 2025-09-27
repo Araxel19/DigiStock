@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
-import { OcrServiceAdapter } from './ocr.service';
+import { OcrService } from './ocr.service';
 import { OcrController } from './ocr.controller';
-import { N8nConfig } from '../../config/n8n.config';
-import { N8nConfigAdapter } from '../../adapters/n8n.config.adapter';
+import { BusinessLogicModule } from '../../business-logic/business-logic.module';
+import { InventoryModule } from '../inventory/inventory.module';
 
 @Module({
-  providers: [OcrServiceAdapter, N8nConfig, N8nConfigAdapter],
+  imports: [BusinessLogicModule, InventoryModule],
+  providers: [OcrService],
   controllers: [OcrController],
-  exports: [OcrServiceAdapter],
+  exports: [OcrService],
 })
 export class OcrModule {}

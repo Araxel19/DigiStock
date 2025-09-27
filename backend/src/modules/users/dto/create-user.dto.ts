@@ -4,41 +4,48 @@ import {
   IsEmail,
   IsNotEmpty,
   MinLength,
-  IsEnum,
-  IsBoolean,
+  IsUUID,
+  IsArray,
+  IsInt,
   IsOptional,
+  IsBoolean,
 } from 'class-validator';
-import { UserRole } from '../entities/user.entity';
 
 export class CreateUserDto {
-  @ApiProperty({ example: 'john.doe@example.com', description: 'Correo electrónico del usuario' })
-  @IsEmail({}, { message: 'El formato del email no es válido.' })
-  @IsNotEmpty({ message: 'El email no puede estar vacío.' })
+  @ApiProperty({ example: 'john.doe@example.com' })
+  @IsEmail()
+  @IsNotEmpty()
   email: string;
 
-  @ApiProperty({ example: 'Password123!', description: 'Contraseña del usuario (mínimo 8 caracteres)' })
+  @ApiProperty({ example: 'Password123!' })
   @IsString()
-  @IsNotEmpty({ message: 'La contraseña no puede estar vacía.' })
-  @MinLength(8, { message: 'La contraseña debe tener al menos 8 caracteres.' })
+  @IsNotEmpty()
+  @MinLength(8)
   password: string;
 
-  @ApiProperty({ example: 'John', description: 'Nombre del usuario' })
+  @ApiProperty({ example: 'John' })
   @IsString()
-  @IsNotEmpty({ message: 'El nombre no puede estar vacío.' })
+  @IsNotEmpty()
   firstName: string;
 
-  @ApiProperty({ example: 'Doe', description: 'Apellido del usuario' })
+  @ApiProperty({ example: 'Doe' })
   @IsString()
-  @IsNotEmpty({ message: 'El apellido no puede estar vacío.' })
+  @IsNotEmpty()
   lastName: string;
 
-  @ApiProperty({ enum: UserRole, default: UserRole.USER, description: 'Rol del usuario' })
-  @IsEnum(UserRole)
-  @IsOptional()
-  role?: UserRole;
+  @ApiProperty({ example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' })
+  @IsUUID()
+  @IsNotEmpty()
+  organizationId: string;
 
-  @ApiProperty({ default: true, description: 'Indica si el usuario está activo' })
+  @ApiProperty({ example: [1, 2] })
+  @IsArray()
+  @IsInt({ each: true })
+  @IsNotEmpty()
+  roleIds: number[];
+
+  @ApiProperty({ example: false })
   @IsBoolean()
   @IsOptional()
-  isActive?: boolean;
+  isSuperAdmin?: boolean;
 }

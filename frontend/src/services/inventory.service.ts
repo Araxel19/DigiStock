@@ -18,6 +18,15 @@ export const inventoryService = {
     return response.data
   },
 
+  async updateProduct(id: string, productData: Partial<Product>): Promise<Product> {
+    const response = await api.put(`/inventory/products/${id}`, productData)
+    return response.data
+  },
+
+  async removeProduct(id: string): Promise<void> {
+    await api.delete(`/inventory/products/${id}`)
+  },
+
   async getPlanillas(): Promise<Planilla[]> {
     const response = await api.get('/inventory/planillas')
     return response.data
@@ -40,8 +49,12 @@ export const inventoryService = {
     return response.data
   },
 
-  async updatePlanillaStatus(id: string, status: string): Promise<Planilla> {
-    const response = await api.patch(`/inventory/planillas/${id}/status`, { status })
+  async updatePlanilla(id: string, planillaData: Partial<Planilla>): Promise<Planilla> {
+    const response = await api.put(`/inventory/planillas/${id}`, planillaData)
     return response.data
+  },
+
+  async removePlanilla(id: string): Promise<void> {
+    await api.delete(`/inventory/planillas/${id}`)
   }
 }

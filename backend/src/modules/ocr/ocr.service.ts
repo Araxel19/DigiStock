@@ -1,26 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { OcrService } from 'digistock-business-logic';
-import { N8nConfigAdapter } from '../../adapters/n8n.config.adapter';
+import { OcrService as BusinessOcrService } from 'digistock-business-logic';
 
 @Injectable()
-export class OcrServiceAdapter {
-  private ocrService: OcrService;
-
+export class OcrService {
   constructor(
-    private readonly n8nConfigAdapter: N8nConfigAdapter,
-  ) {
-    this.ocrService = new OcrService(this.n8nConfigAdapter);
-  }
+    private readonly businessOcrService: BusinessOcrService,
+  ) {}
 
-  async processImage(imagePath: string): Promise<any> {
-    return await this.ocrService.processImage(imagePath);
+  async processImage(imagePath: string, planillaId: string): Promise<any> {
+    return await this.businessOcrService.processImage(imagePath, planillaId);
   }
 
   async sendToN8nWebhook(data: any, workflowId: string): Promise<any> {
-    return await this.ocrService.sendToN8nWebhook(data, workflowId);
+    return await this.businessOcrService.sendToN8nWebhook(data, workflowId);
   }
 
   async checkN8nStatus(): Promise<any> {
-    return await this.ocrService.checkN8nStatus();
+    return await this.businessOcrService.checkN8nStatus();
   }
 }

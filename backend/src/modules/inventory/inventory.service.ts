@@ -1,49 +1,52 @@
 import { Injectable } from '@nestjs/common';
-import { InventoryService } from 'digistock-business-logic';
-import { ProductRepositoryAdapter } from '../../adapters/product.repository.adapter';
-import { PlanillaRepositoryAdapter } from '../../adapters/planilla.repository.adapter';
+import { InventoryService as BusinessInventoryService } from 'digistock-business-logic';
+import { CreateProductDto, UpdateProductDto, CreatePlanillaDto, UpdatePlanillaDto } from './dto';
 
 @Injectable()
-export class InventoryServiceAdapter {
-  private inventoryService: InventoryService;
-
+export class InventoryService {
   constructor(
-    private readonly productRepositoryAdapter: ProductRepositoryAdapter,
-    private readonly planillaRepositoryAdapter: PlanillaRepositoryAdapter,
-  ) {
-    this.inventoryService = new InventoryService(
-      this.productRepositoryAdapter,
-      this.planillaRepositoryAdapter,
-    );
-  }
+    private readonly businessInventoryService: BusinessInventoryService,
+  ) {}
 
   // Product methods
-  async createProduct(createProductDto: any): Promise<any> {
-    return await this.inventoryService.createProduct(createProductDto);
+  createProduct(createProductDto: CreateProductDto) {
+    return this.businessInventoryService.createProduct(createProductDto);
   }
 
-  async findAllProducts(search?: string): Promise<any[]> {
-    return await this.inventoryService.findAllProducts(search);
+  findAllProducts(organizationId: string, search?: string) {
+    return this.businessInventoryService.findAllProducts(organizationId, search);
   }
 
-  async findProductById(id: string): Promise<any> {
-    return await this.inventoryService.findProductById(id);
+  findProductById(id: string) {
+    return this.businessInventoryService.findProductById(id);
+  }
+
+  updateProduct(id: string, updateProductDto: UpdateProductDto) {
+    return this.businessInventoryService.updateProduct(id, updateProductDto);
+  }
+
+  removeProduct(id: string) {
+    return this.businessInventoryService.removeProduct(id);
   }
 
   // Planilla methods
-  async createPlanilla(createPlanillaDto: any): Promise<any> {
-    return await this.inventoryService.createPlanilla(createPlanillaDto);
+  createPlanilla(createPlanillaDto: CreatePlanillaDto) {
+    return this.businessInventoryService.createPlanilla(createPlanillaDto);
   }
 
-  async findAllPlanillas(): Promise<any[]> {
-    return await this.inventoryService.findAllPlanillas();
+  findAllPlanillas(organizationId: string) {
+    return this.businessInventoryService.findAllPlanillas(organizationId);
   }
 
-  async findPlanillaById(id: string): Promise<any> {
-    return await this.inventoryService.findPlanillaById(id);
+  findPlanillaById(id: string) {
+    return this.businessInventoryService.findPlanillaById(id);
   }
 
-  async updatePlanillaStatus(id: string, status: string): Promise<any> {
-    return await this.inventoryService.updatePlanillaStatus(id, status);
+  updatePlanilla(id: string, updatePlanillaDto: UpdatePlanillaDto) {
+    return this.businessInventoryService.updatePlanilla(id, updatePlanillaDto);
+  }
+
+  removePlanilla(id: string) {
+    return this.businessInventoryService.removePlanilla(id);
   }
 }

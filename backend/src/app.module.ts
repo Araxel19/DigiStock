@@ -6,7 +6,9 @@ import { UsersModule } from './modules/users/users.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { OcrModule } from './modules/ocr/ocr.module';
 import { DatabaseConfig } from './config/database.config';
-import { User, Product, Planilla } from 'digistock-business-logic';
+import { OrganizationModule } from './modules/organization/organization.module';
+import { RolesModule } from './modules/roles/roles.module';
+import { BusinessLogicModule } from './business-logic/business-logic.module';
 
 @Module({
   imports: [
@@ -17,10 +19,13 @@ import { User, Product, Planilla } from 'digistock-business-logic';
     TypeOrmModule.forRootAsync({
       useClass: DatabaseConfig,
     }),
+    BusinessLogicModule,
     AuthModule,
     UsersModule,
     InventoryModule,
     OcrModule,
+    OrganizationModule,
+    RolesModule,
   ],
 })
 export class AppModule {}

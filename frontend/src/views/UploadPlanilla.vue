@@ -104,105 +104,6 @@
       </div>
     </div>
 
-    <!-- Results Section -->
-    <div v-if="ocrResults" class="bg-white rounded-xl shadow-soft p-6">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold text-gray-900">Resultados del OCR</h3>
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-          {{ ocrResults.extractedProducts?.length || 0 }} productos encontrados
-        </span>
-      </div>
-
-      <!-- Extracted Products -->
-      <div v-if="ocrResults.extractedProducts && ocrResults.extractedProducts.length > 0" class="space-y-4">
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-for="(product, index) in ocrResults.extractedProducts" :key="index">
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  <input
-                    v-model="product.code"
-                    class="w-full border-gray-300 rounded-md text-sm"
-                    placeholder="Código"
-                  />
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  <input
-                    v-model="product.name"
-                    class="w-full border-gray-300 rounded-md text-sm"
-                    placeholder="Nombre del producto"
-                  />
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  <input
-                    v-model="product.quantity"
-                    type="number"
-                    class="w-20 border-gray-300 rounded-md text-sm"
-                    placeholder="0"
-                  />
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  <input
-                    v-model="product.price"
-                    type="number"
-                    step="0.01"
-                    class="w-24 border-gray-300 rounded-md text-sm"
-                    placeholder="0.00"
-                  />
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <button
-                    @click="removeProduct(index)"
-                    class="text-red-600 hover:text-red-800 transition-colors"
-                  >
-                    Eliminar
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="flex justify-end space-x-3 pt-4 border-t">
-          <button
-            @click="addProduct"
-            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-          >
-            Agregar Producto
-          </button>
-          <button
-            @click="saveProducts"
-            :disabled="isSaving"
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 transition-colors"
-          >
-            <span v-if="!isSaving">Guardar en Inventario</span>
-            <div v-else class="flex items-center space-x-2">
-              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              <span>Guardando...</span>
-            </div>
-          </button>
-        </div>
-      </div>
-
-      <!-- No products found -->
-      <div v-else class="text-center py-8">
-        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-        </svg>
-        <p class="mt-2 text-sm text-gray-500">No se encontraron productos en la planilla</p>
-        <p class="text-xs text-gray-400">Intenta con una imagen de mejor calidad</p>
-      </div>
-    </div>
-
     <!-- Error Message -->
     <div v-if="errorMessage" class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
       <div class="flex">
@@ -218,213 +119,146 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { inventoryService } from '@/services/inventory.service'
-import { useAuthStore } from '@/store/auth'
+import { ref, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { inventoryService } from '@/services/inventory.service';
+import { io, Socket } from 'socket.io-client';
 
-const router = useRouter()
+const router = useRouter();
 
 // Reactive data
-const fileInput = ref<HTMLInputElement | null>(null)
-const selectedFile = ref<File | null>(null)
-const filePreview = ref<string | null>(null)
-const isDragging = ref(false)
-const isProcessing = ref(false)
-const isSaving = ref(false)
-const ocrResults = ref<any>(null)
-const errorMessage = ref('')
-const processingSteps = ref<any[]>([])
+const fileInput = ref<HTMLInputElement | null>(null);
+const selectedFile = ref<File | null>(null);
+const filePreview = ref<string | null>(null);
+const isDragging = ref(false);
+const isProcessing = ref(false);
+const errorMessage = ref('');
+const processingSteps = ref<any[]>([]);
+
+let socket: Socket | null = null;
 
 const triggerFileInput = () => {
-  fileInput.value?.click()
-}
-
-// WebSocket for real-time updates
-let websocket: WebSocket | null = null
+  fileInput.value?.click();
+};
 
 // File handling
 const handleDrop = (e: DragEvent) => {
-  e.preventDefault()
-  isDragging.value = false
-  
-  const files = e.dataTransfer?.files
+  e.preventDefault();
+  isDragging.value = false;
+
+  const files = e.dataTransfer?.files;
   if (files && files.length > 0) {
-    handleFile(files[0])
+    handleFile(files[0]);
   }
-}
+};
 
 const handleFileSelect = (e: Event) => {
-  const target = e.target as HTMLInputElement
+  const target = e.target as HTMLInputElement;
   if (target.files && target.files.length > 0) {
-    handleFile(target.files[0])
+    handleFile(target.files[0]);
   }
-}
+};
 
 const handleFile = (file: File) => {
   if (!file.type.startsWith('image/')) {
-    errorMessage.value = 'Por favor selecciona un archivo de imagen válido'
-    return
+    errorMessage.value = 'Por favor selecciona un archivo de imagen válido';
+    return;
   }
 
   if (file.size > 10 * 1024 * 1024) { // 10MB
-    errorMessage.value = 'El archivo es demasiado grande. Máximo 10MB'
-    return
+    errorMessage.value = 'El archivo es demasiado grande. Máximo 10MB';
+    return;
   }
 
-  selectedFile.value = file
-  errorMessage.value = ''
+  selectedFile.value = file;
+  errorMessage.value = '';
 
   // Create preview
-  const reader = new FileReader()
+  const reader = new FileReader();
   reader.onload = (e) => {
-    filePreview.value = e.target?.result as string
-  }
-  reader.readAsDataURL(file)
-}
+    filePreview.value = e.target?.result as string;
+  };
+  reader.readAsDataURL(file);
+};
 
 const clearFile = () => {
-  selectedFile.value = null
-  filePreview.value = null
-  ocrResults.value = null
-  processingSteps.value = []
-  errorMessage.value = ''
-}
+  selectedFile.value = null;
+  filePreview.value = null;
+  processingSteps.value = [];
+  errorMessage.value = '';
+};
 
 // OCR Processing
 const processFile = async () => {
-  if (!selectedFile.value) return
+  if (!selectedFile.value) return;
 
-  isProcessing.value = true
-  errorMessage.value = ''
-  processingSteps.value = []
+  isProcessing.value = true;
+  errorMessage.value = '';
+  processingSteps.value = [];
 
   try {
-    // Initialize WebSocket for real-time updates
-    initWebSocket()
+    addProcessingStep('Subiendo archivo...', 'Preparando imagen para procesamiento', 'processing');
 
-    // Add initial step
-    addProcessingStep('Subiendo archivo...', 'Preparando imagen para procesamiento', 'processing')
+    const result = await inventoryService.uploadPlanilla(selectedFile.value);
+    const planillaId = result.id;
 
-    // Upload and process file
-    const result = await inventoryService.uploadPlanilla(selectedFile.value)
-    
-    if (result.success) {
-      ocrResults.value = result.data
-      addProcessingStep('Procesamiento completado', 'OCR finalizado exitosamente', 'completed')
-    } else {
-      throw new Error(result.message || 'Error en el procesamiento OCR')
-    }
+    initWebSocket(planillaId);
+
   } catch (error: any) {
-    errorMessage.value = error.message || 'Error al procesar la planilla'
-    addProcessingStep('Error en procesamiento', error.message, 'error')
-  } finally {
-    isProcessing.value = false
-    if (websocket) {
-      websocket.close()
-    }
+    errorMessage.value = error.message || 'Error al procesar la planilla';
+    addProcessingStep('Error en procesamiento', error.message, 'error');
+    isProcessing.value = false;
   }
-}
+};
 
 // WebSocket for real-time updates
-const initWebSocket = () => {
-  const wsUrl = `ws://localhost:3000/ws/progress`
-  websocket = new WebSocket(wsUrl)
+const initWebSocket = (planillaId: string) => {
+  socket = io('http://localhost:3000/ws/progress');
 
-  websocket.onmessage = (event) => {
-    const data = JSON.parse(event.data)
-    
-    if (data.type === 'progress') {
-      addProcessingStep(data.title, data.description, data.status)
+  socket.on('connect', () => {
+    console.log('Connected to WebSocket');
+    socket?.emit('joinRoom', planillaId);
+  });
+
+  socket.on('progress', (data: any) => {
+    addProcessingStep(data.message, 'Progreso de OCR', data.status);
+    if (data.status === 'validacion_pendiente') {
+      isProcessing.value = false;
+      router.push({ name: 'ValidarPlanilla', params: { id: planillaId } });
     }
-  }
+  });
 
-  websocket.onerror = (error) => {
-    console.warn('WebSocket error:', error)
-  }
-}
+  socket.on('disconnect', () => {
+    console.log('Disconnected from WebSocket');
+  });
+
+  socket.on('error', (error: any) => {
+    console.error('WebSocket error:', error);
+  });
+};
 
 const addProcessingStep = (title: string, description: string, status: string) => {
   processingSteps.value.push({
     title,
     description,
     status,
-    timestamp: new Date().toLocaleTimeString()
-  })
-}
-
-// Product management
-const addProduct = () => {
-  if (!ocrResults.value.extractedProducts) {
-    ocrResults.value.extractedProducts = []
-  }
-  
-  ocrResults.value.extractedProducts.push({
-    code: '',
-    name: '',
-    quantity: 0,
-    price: 0
-  })
-}
-
-const removeProduct = (index: number) => {
-  ocrResults.value.extractedProducts.splice(index, 1)
-}
-
-const saveProducts = async () => {
-  if (!ocrResults.value?.extractedProducts) return;
-  const authStore = useAuthStore();
-
-  if (!authStore.user) {
-    errorMessage.value = 'Debe iniciar sesión para guardar productos.';
-    isSaving.value = false;
-    return;
-  }
-
-  isSaving.value = true;
-  try {
-    for (const product of ocrResults.value.extractedProducts) {
-      if (product.code && product.name) {
-        await inventoryService.createProduct({
-          code: product.code,
-          name: product.name,
-          price: product.price || 0,
-          description: `Importado desde planilla OCR - ${new Date().toLocaleDateString()}`,
-          organizationId: authStore.user.organizationId,
-        });
-      }
-    }
-
-    router.push({
-      path: '/inventory',
-      query: { success: 'Productos guardados exitosamente' },
-    });
-  } catch (error: any) {
-    errorMessage.value = error.message || 'Error al guardar productos';
-  } finally {
-    isSaving.value = false;
-  }
+    timestamp: new Date().toLocaleTimeString(),
+  });
 };
 
 // Utility functions
 const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 Bytes'
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
 
 // Lifecycle
-onMounted(() => {
-  // Setup drag and drop listeners
-  document.addEventListener('dragover', (e) => e.preventDefault())
-  document.addEventListener('drop', (e) => e.preventDefault())
-})
-
 onUnmounted(() => {
-  if (websocket) {
-    websocket.close()
+  if (socket) {
+    socket.disconnect();
   }
-})
+});
 </script>

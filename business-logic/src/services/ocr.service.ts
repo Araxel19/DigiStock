@@ -1,7 +1,8 @@
-import { Injectable, BadRequestException, Inject } from '@nestjs/common';
+import { Injectable, BadRequestException, Inject, NotFoundException } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
+import { IPlanillaRepository } from '../interfaces/repositories.interface';
 
 export interface IN8nConfig {
   getWebhookUrl(workflowId: string): string;
@@ -14,6 +15,8 @@ export class OcrService {
 
   constructor(
     @Inject('IN8nConfig') private readonly n8nConfig: IN8nConfig,
+    @Inject('IPlanillaRepository')
+    private readonly planillaRepository: IPlanillaRepository,
   ) {
     this.httpClient = axios.create({
       timeout: 60000, // Increased timeout for base64 upload
@@ -79,5 +82,18 @@ export class OcrService {
     } catch (error) {
       throw new BadRequestException(`Error conectando con n8n: ${error.message}`);
     }
+  }
+
+  async saveOcrResult(planillaId: string, inventario: any[]): Promise<void> {
+    const planilla = await this.planillaRepository.findOne({ where: { id: planillaId } });
+
+    if (!planilla) {
+      throw new NotFoundException(`La planilla con ID ${planillaId} no fue encontrada.`);
+    }
+
+    planilla.rawOcrData = inventario;
+    planilla.status = 'validacion_pendiente';
+
+    await this.planillaRepository.save(planilla);
   }
 }

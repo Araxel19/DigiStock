@@ -18,4 +18,6 @@ export declare class InventoryService {
     findPlanillaById(id: string): Promise<Planilla>;
     updatePlanilla(id: string, updatePlanillaDto: UpdatePlanillaDto): Promise<Planilla>;
     removePlanilla(id: string): Promise<void>;
+    findPlanillasByUserId(userId: string): Promise<Planilla[]>;
+    saveConfirmedN8nPlanilla(createN8nPlanillaDto: import("../dto").CreateN8nPlanillaDto): Promise<Planilla>;
 }

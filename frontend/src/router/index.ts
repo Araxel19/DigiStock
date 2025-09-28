@@ -42,6 +42,12 @@ const routes: Array<RouteRecordRaw> = [
     name: 'InventoryList',
     component: InventoryList,
     meta: { requiresAuth: true, roles: ['org_admin', 'supervisor'] }
+  },
+  {
+    path: '/planillas/:id/validar',
+    name: 'ValidarPlanilla',
+    component: () => import('@/views/ValidarPlanilla.vue'),
+    meta: { requiresAuth: true, roles: ['org_admin', 'supervisor', 'data_entry'] }
   }
   ,
   {
@@ -55,6 +61,12 @@ const routes: Array<RouteRecordRaw> = [
     name: 'OrganizationManagement',
     component: () => import('@/views/OrganizationManagement.vue'),
     meta: { requiresAuth: true, requiresSuperAdmin: true }
+  },
+  {
+    path: '/n8n-planilla-review',
+    name: 'N8nPlanillaReview',
+    component: () => import('@/views/N8nPlanillaReview.vue'),
+    meta: { requiresAuth: true, roles: ['org_admin', 'supervisor', 'data_entry'] }
   }
 ]
 
@@ -63,7 +75,7 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach((to:any, _from:any, next:any) => {
   const authStore = useAuthStore()
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
@@ -81,7 +93,7 @@ router.beforeEach((to, _from, next) => {
       return next('/login');
     }
 
-    const hasRole = user.roles.some(role => to.meta.roles!.includes(role));
+    const hasRole = user.roles.some((role:any) => to.meta.roles!.includes(role));
 
     if (authStore.isSuperAdmin || hasRole) {
       return next();

@@ -18,4 +18,8 @@ export class OcrService {
   async checkN8nStatus(): Promise<any> {
     return await this.businessOcrService.checkN8nStatus();
   }
+
+  async saveOcrResult(planillaId: string, inventario: any[]): Promise<void> {
+    return await this.businessOcrService.saveOcrResult(planillaId, inventario);
+  }
 }

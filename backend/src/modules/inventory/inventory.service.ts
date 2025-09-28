@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { InventoryService as BusinessInventoryService } from 'digistock-business-logic';
-import { CreateProductDto, UpdateProductDto, CreatePlanillaDto, UpdatePlanillaDto } from './dto';
+import { InventoryService as BusinessInventoryService, ValidatedPlanillaDto } from 'digistock-business-logic';
+import { CreateProductDto, UpdateProductDto, CreatePlanillaDto, UpdatePlanillaDto} from './dto';
 
 @Injectable()
 export class InventoryService {
   constructor(
     private readonly businessInventoryService: BusinessInventoryService,
-  ) {}
+  ) { }
 
   // Product methods
   createProduct(createProductDto: CreateProductDto) {
@@ -52,5 +52,9 @@ export class InventoryService {
 
   removePlanilla(id: string) {
     return this.businessInventoryService.removePlanilla(id);
+  }
+
+  saveValidatedPlanillaItems(id: string, validatedPlanillaDto: ValidatedPlanillaDto) {
+    return this.businessInventoryService.saveValidatedPlanillaItems(id, validatedPlanillaDto);
   }
 }

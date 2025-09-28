@@ -1,6 +1,5 @@
 <template>
   <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 relative">
-    <!-- Loading Overlay -->
     <div v-if="isLoading" class="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
       <div class="flex items-center space-x-2">
         <svg class="animate-spin h-5 w-5 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -11,17 +10,14 @@
       </div>
     </div>
 
-    <!-- Header -->
     <div class="mb-8">
       <h2 class="text-2xl font-bold text-gray-900 mb-2">Dashboard</h2>
       <p class="text-gray-600">
-        {{ authStore.isSuperAdmin ? 'Resumen global del sistema' : 'Resumen del sistema de digitalización de inventario' }}
+        {{ authStore.user?.isSuperAdmin ? 'Resumen global del sistema' : 'Resumen del sistema de digitalización de inventario' }}
       </p>
     </div>
 
-    <!-- Super Admin Dashboard -->
-    <div v-if="authStore.isSuperAdmin">
-      <!-- Stats Cards -->
+    <div v-if="authStore.user?.isSuperAdmin">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div class="bg-white p-6 rounded-xl shadow-soft">
           <div class="flex items-center">
@@ -35,7 +31,6 @@
           </div>
         </div>
       </div>
-      <!-- Quick Actions -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <router-link
           to="/organizations"
@@ -68,9 +63,7 @@
       </div>
     </div>
 
-    <!-- Organization User Dashboard -->
     <div v-else>
-      <!-- Stats Cards -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div class="bg-white p-6 rounded-xl shadow-soft">
           <div class="flex items-center">
@@ -118,7 +111,6 @@
         </div>
       </div>
 
-      <!-- Quick Actions -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <router-link
           v-if="canPerformAction('Subir Planilla')"
@@ -168,9 +160,42 @@
           </div>
         </router-link>
       </div>
+      
+      <div v-if="pendingPlanillas.length > 0" class="bg-white rounded-xl shadow-soft">
+        <div class="p-6 border-b border-gray-200">
+          <h3 class="text-lg font-semibold text-gray-900">Planillas Pendientes de Validación</h3>
+        </div>
+        <div class="p-6">
+          <table class="min-w-full">
+            <thead>
+              <tr>
+                <th class="text-left">Archivo</th>
+                <th class="text-left">Fecha de Carga</th>
+                <th class="text-left">Estado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="planilla in pendingPlanillas" :key="planilla.id">
+                <td>{{ planilla.fileName }}</td>
+                <td>{{ new Date(planilla.uploadedAt).toLocaleString() }}</td>
+                <td>
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                    {{ planilla.status }}
+                  </span>
+                </td>
+                <td>
+                  <router-link :to="{ name: 'ValidarPlanilla', params: { id: planilla.id } }" class="text-primary-600 hover:text-primary-900">
+                    Validar
+                  </router-link>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-      <!-- Recent Activity -->
-      <div class="bg-white rounded-xl shadow-soft">
+      <div class="bg-white rounded-xl shadow-soft mt-8">
         <div class="p-6 border-b border-gray-200">
           <h3 class="text-lg font-semibold text-gray-900">Actividad Reciente</h3>
         </div>
@@ -204,6 +229,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/store/auth'
 import { inventoryService } from '@/services/inventory.service'
 import { organizationService } from '@/services/organization.service'
+import { Planilla } from '@/types/inventory'
 
 const authStore = useAuthStore()
 const isLoading = ref(true)
@@ -222,11 +248,15 @@ const stats = ref({
 })
 
 const recentActivity = ref<any[]>([])
+const pendingPlanillas = ref<Planilla[]>([])
 
 const userRoles = computed(() => authStore.user?.roles || [])
 
 const canPerformAction = (action: 'Subir Planilla' | 'Ver Inventario' | 'Gestionar Usuarios') => {
-  if (authStore.isSuperAdmin) return false
+  if (authStore.user?.isSuperAdmin) {
+      if (action === 'Gestionar Usuarios') return true;
+      return false;
+  }
 
   const roles = userRoles.value
   switch (action) {
@@ -261,6 +291,7 @@ async function loadInventoryData() {
     stats.value.totalProducts = products.length
     stats.value.processedPlanillas = planillas.filter(p => p.status === 'procesado').length
     stats.value.pendingPlanillas = planillas.filter(p => p.status === 'validacion_pendiente').length
+    pendingPlanillas.value = planillas.filter(p => p.status === 'validacion_pendiente');
 
     const recentPlanillas = planillas
       .filter(p => p.status === 'procesado' && p.processedAt)
@@ -270,7 +301,7 @@ async function loadInventoryData() {
         id: `p-${p.id}`,
         type: 'planilla',
         title: 'Planilla procesada',
-        description: `${p.fileName} - ${p.items.length} productos`,
+        description: `${p.fileName}`,
         time: new Date(p.processedAt!).toLocaleString(),
       }))
 
@@ -300,18 +331,19 @@ async function loadInventoryData() {
 async function loadDashboardData() {
   isLoading.value = true
   try {
-    if (authStore.isSuperAdmin) {
+    if (authStore.user?.isSuperAdmin) {
       await loadSuperAdminData()
     } else {
       await loadInventoryData()
     }
   } catch (error) {
-     console.error('Error loading dashboard data:', error)
+      console.error('Error loading dashboard data:', error)
   }
   finally {
     isLoading.value = false
   }
 }
+
 
 onMounted(() => {
   loadDashboardData()

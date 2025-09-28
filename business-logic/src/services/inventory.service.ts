@@ -11,6 +11,8 @@ import {
   UpdateProductDto,
   CreatePlanillaDto,
   UpdatePlanillaDto,
+  CreateN8nPlanillaDto,
+  ValidatedPlanillaDto,
 } from '../dto';
 import {
   IProductRepository,
@@ -34,7 +36,7 @@ export class InventoryService {
     private readonly categoryRepository: ICategoryRepository,
     @Inject('ILocationRepository')
     private readonly locationRepository: ILocationRepository,
-  ) {}
+  ) { }
 
   // Product methods
   async createProduct(createProductDto: CreateProductDto): Promise<Product> {
@@ -45,9 +47,9 @@ export class InventoryService {
   async findAllProducts(organizationId: string, search?: string): Promise<Product[]> {
     const where = search
       ? [
-          { name: Like(`%${search}%`), organizationId },
-          { code: Like(`%${search}%`), organizationId },
-        ]
+        { name: Like(`%${search}%`), organizationId },
+        { code: Like(`%${search}%`), organizationId },
+      ]
       : { organizationId };
 
     return this.productRepository.find({ where, relations: ['category', 'location'] });
@@ -79,10 +81,10 @@ export class InventoryService {
     return this.planillaRepository.save(planilla);
   }
 
-    async findAllPlanillas(organizationId: string): Promise<any[]> {
+  async findAllPlanillas(organizationId: string): Promise<any[]> {
     const planillas = await this.planillaRepository.find({
       where: { organizationId },
-      order: { createdAt: 'DESC' },
+      order: { uploadedAt: 'DESC' },
       relations: ['user'],
     });
     return planillas.map(p => ({ ...p, user: p.user ? { id: p.user.id, firstName: p.user.firstName, lastName: p.user.lastName } : null }));
@@ -91,7 +93,7 @@ export class InventoryService {
   async findPlanillasByUserId(userId: string): Promise<Planilla[]> {
     return this.planillaRepository.find({
       where: { userId },
-      order: { createdAt: 'DESC' },
+      order: { uploadedAt: 'DESC' },
       relations: ['user'],
     });
   }
@@ -111,13 +113,40 @@ export class InventoryService {
     await this.planillaRepository.update(id, updatePlanillaDto);
     return this.findPlanillaById(id);
   }
-  
+
   async removePlanilla(id: string): Promise<void> {
     const result = await this.planillaRepository.delete(id);
     if (result.affected === 0) {
-        throw new NotFoundException('Planilla not found');
+      throw new NotFoundException('Planilla not found');
     }
   }
 
-  // ... other methods for categories, locations, planillaItems
+  async saveValidatedPlanillaItems(
+    planillaId: string,
+    validatedPlanillaDto: ValidatedPlanillaDto,
+  ): Promise<Planilla> {
+    const planilla = await this.planillaRepository.findOne({
+      where: { id: planillaId },
+    });
+
+    if (!planilla) {
+      throw new NotFoundException(`La planilla con ID ${planillaId} no fue encontrada.`);
+    }
+
+    // Borra los items existentes para reemplazarlos con los validados
+    await this.planillaItemRepository.delete({ planillaId });
+
+    for (const item of validatedPlanillaDto.items) {
+      const newItem = this.planillaItemRepository.create({
+        ...item,
+        planillaId,
+      });
+      await this.planillaItemRepository.save(newItem);
+    }
+
+    planilla.status = 'procesado';
+    planilla.processedAt = new Date();
+
+    return this.planillaRepository.save(planilla);
+  }
 }

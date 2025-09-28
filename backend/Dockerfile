@@ -18,7 +18,7 @@ RUN npm install
 # Copia el resto del código
 COPY . . 
 
-# Construye ambos proyectos
+RUN mkdir -p /app/uploads/planillas
 RUN npm run build --workspace=business-logic
 RUN npm run build --workspace=backend
 

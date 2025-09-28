@@ -32,7 +32,7 @@ export const inventoryService = {
     return response.data
   },
 
-  async getPlanilla(id: string): Promise<Planilla> {
+  async getPlanillaById(id: string): Promise<Planilla> {
     const response = await api.get(`/inventory/planillas/${id}`)
     return response.data
   },
@@ -56,5 +56,10 @@ export const inventoryService = {
 
   async removePlanilla(id: string): Promise<void> {
     await api.delete(`/inventory/planillas/${id}`)
+  },
+
+  async confirmPlanillaData(id: string, validatedData: { items: any[] }): Promise<any> {
+    const response = await api.post(`/inventory/planillas/${id}/confirmar`, validatedData);
+    return response.data;
   }
 }

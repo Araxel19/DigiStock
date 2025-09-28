@@ -90,7 +90,8 @@
     },
     {
       "parameters": {
-        "jsCode": "// Lee el texto del OCR del nodo anterior\nconst text = $json.pages?.[0]?.markdown;\nif (!text) {\n  throw new Error(\"No se encontró texto en la entrada del OCR.\");\n}\n\n// Obtiene el planillaId que el backend envió al webhook\nconst planillaId = $('Webhook OCR').first().json.body.planillaId;\n\n// Separa las líneas del texto\nconst lines = text.split(\"\\n\").filter(l => l.trim() !== \"\");\n\n// Busca la línea del encabezado usando las palabras correctas y en minúsculas\nconst headerIndex = lines.findIndex(l => \n  l.toLowerCase().includes(\"detected code\") && l.toLowerCase().includes(\"detected name\")\n);\n\n// --- ¡ESTA ES LA CORRECCIÓN CLAVE! ---\n// Si no se encuentra el encabezado, lanza un error claro en lugar de fallar silenciosamente.\nif (headerIndex === -1) {\n  throw new Error(\"No se pudo encontrar la fila de encabezado ('Detected Code', 'Detected Name') en el texto del OCR. El texto extraído fue:\\n\\n\" + text);\n}\n\n// Extrae los encabezados de la línea encontrada y los convierte a camelCase\nconst headers = lines[headerIndex].split(\"|\").map(h => h.trim().toLowerCase().replace(/\s/g, '')).filter(h => h);\n\n// Procesa las filas de datos que están después del encabezado\nconst rows = lines.slice(headerIndex + 1).map(line => {\n  const cols = line.split(\"|\").map(c => c.trim()).filter(c => c);\n  if (cols.length < headers.length) return null; // descarta filas incompletas\n\n  let obj = {};\n  headers.forEach((h, i) => {\n    let key = h;\n    if (key === 'detectedcode') key = 'detectedCode';\n    if (key === 'detectedname') key = 'detectedName';\n    if (key === 'detectedquantity') key = 'detectedQuantity';\n    obj[key] = cols[i] || \"\";\n  });\n  return obj;\n}).filter(r => r);\n\n// Devuelve cada producto como un item separado, \"etiquetado\" con el planillaId\nreturn rows.map(producto => ({\n  json: {\n    producto: producto,\n    planillaId: planillaId\n  }\n}));"\n      },
+        "jsCode": "// Lee el texto del OCR\nconst text = $json.pages?.[0]?.markdown;\nif (!text) {\n  throw new Error(\"No se encontró texto en la entrada\");\n}\n\n// Obtiene el planillaId UNA SOLA VEZ, al principio del todo\nconst planillaId = $('Webhook OCR').first().json.body.planillaId;\n\n// Separa las líneas\nconst lines = text.split(\"\\n\").filter(l => l.trim() !== \"\");\n\n// Encuentra el header (línea de columnas)\nconst headerIndex = lines.findIndex(l => l.includes(\"INVENTARIO\") && l.includes(\"N.º DE ARTÍCULO\"));\nconst headers = lines[headerIndex].split(\"|\").map(h => h.trim()).filter(h => h);\n\n// Filtra las filas después del header\nconst rows = lines.slice(headerIndex + 1).map(line => {\n  const cols = line.split(\"|\").map(c => c.trim()).filter(c => c);\n  if (cols.length < headers.length) return null; // descartar filas incompletas\n  let obj = {};\n  headers.forEach((h, i) => {\n    obj[h] = cols[i] || \"\";\n  });\n  return obj;\n}).filter(r => r);\n\n// Devuelve cada producto, PERO AHORA cada item también lleva el planillaId\nreturn rows.map(producto => ({\n  json: {\n    producto: producto,     // El objeto del producto\n    planillaId: planillaId  // El ID que viajará con él\n  }\n}));"
+      },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -287,7 +288,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "e16a6c8f-1ff4-41f4-ad45-c09bcf3dacb7",
+  "versionId": "5938ae70-c10f-4334-9fe2-998245f84383",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "4060635e2c10e1925268e83e96cf57e13801bf6b8de0d56bb97b48dd1f9ea3ef"

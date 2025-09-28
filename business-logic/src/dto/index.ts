@@ -6,3 +6,5 @@ export * from './update-product.dto';
 export * from './create-planilla.dto';
 export * from './update-planilla.dto';
 export * from './ocr-request.dto';
+export * from './create-n8n-planilla.dto';
+export * from './validated-planilla-item.dto';

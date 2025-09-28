@@ -55,3 +55,12 @@ export interface Planilla {
     lastName: string;
   };
 }
+
+export interface N8nPlanillaItem {
+  productName: string;
+  quantity: number;
+}
+
+export interface N8nPlanillaData {
+  items: N8nPlanillaItem[];
+}

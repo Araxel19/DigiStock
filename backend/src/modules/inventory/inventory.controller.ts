@@ -16,19 +16,24 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { InventoryService } from './inventory.service';
 import { CreateProductDto, UpdateProductDto, CreatePlanillaDto, UpdatePlanillaDto } from './dto';
+import { ValidatedPlanillaDto } from 'digistock-business-logic';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { ProgressGateway } from '../progress/progress.gateway';
 
 @ApiTags('Inventory')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('inventory')
 export class InventoryController {
-  constructor(private readonly inventoryService: InventoryService) {}
+  constructor(
+    private readonly inventoryService: InventoryService,
+    private readonly progressGateway: ProgressGateway,
+  ) { }
 
   @ApiOperation({ summary: 'Create product' })
   @Post('products')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('org_admin')
   createProduct(@Body() createProductDto: CreateProductDto, @Req() req) {
     // Assuming organizationId is on the user object from the JWT
@@ -38,6 +43,7 @@ export class InventoryController {
 
   @ApiOperation({ summary: 'Get products' })
   @Get('products')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('org_admin', 'supervisor')
   findAllProducts(@Query('search') search: string, @Req() req) {
     return this.inventoryService.findAllProducts(req.user.organizationId, search);
@@ -45,6 +51,7 @@ export class InventoryController {
 
   @ApiOperation({ summary: 'Get product by ID' })
   @Get('products/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('org_admin', 'supervisor')
   findProduct(@Param('id') id: string) {
     return this.inventoryService.findProductById(id);
@@ -52,6 +59,7 @@ export class InventoryController {
 
   @ApiOperation({ summary: 'Update product' })
   @Put('products/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('org_admin')
   updateProduct(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
     return this.inventoryService.updateProduct(id, updateProductDto);
@@ -59,6 +67,7 @@ export class InventoryController {
 
   @ApiOperation({ summary: 'Delete product' })
   @Delete('products/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('org_admin')
   removeProduct(@Param('id') id: string) {
     return this.inventoryService.removeProduct(id);
@@ -66,6 +75,7 @@ export class InventoryController {
 
   @ApiOperation({ summary: 'Create planilla' })
   @Post('planillas')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('org_admin', 'supervisor', 'data_entry')
   createPlanilla(@Body() createPlanillaDto: CreatePlanillaDto, @Req() req) {
     createPlanillaDto.organizationId = req.user.organizationId;
@@ -75,17 +85,19 @@ export class InventoryController {
 
   @ApiOperation({ summary: 'Get planillas' })
   @Get('planillas')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('org_admin', 'supervisor', 'data_entry')
   findAllPlanillas(@Req() req) {
     const user = req.user;
-    if(user.roles.includes('data_entry') && !user.roles.includes('supervisor') && !user.roles.includes('org_admin')) {
-        return this.inventoryService.findPlanillasByUserId(user.userId);
+    if (user.roles.includes('data_entry') && !user.roles.includes('supervisor') && !user.roles.includes('org_admin')) {
+      return this.inventoryService.findPlanillasByUserId(user.userId);
     }
     return this.inventoryService.findAllPlanillas(req.user.organizationId);
   }
 
   @ApiOperation({ summary: 'Get planilla by ID' })
   @Get('planillas/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('org_admin', 'supervisor', 'data_entry')
   findPlanilla(@Param('id') id: string) {
     return this.inventoryService.findPlanillaById(id);
@@ -93,6 +105,7 @@ export class InventoryController {
 
   @ApiOperation({ summary: 'Update planilla' })
   @Put('planillas/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('org_admin', 'supervisor')
   updatePlanilla(@Param('id') id: string, @Body() updatePlanillaDto: UpdatePlanillaDto) {
     return this.inventoryService.updatePlanilla(id, updatePlanillaDto);
@@ -100,9 +113,22 @@ export class InventoryController {
 
   @ApiOperation({ summary: 'Delete planilla' })
   @Delete('planillas/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('org_admin')
   removePlanilla(@Param('id') id: string) {
-    return this.inventoryService.removePlanilla(id);
+    return this.inventoryService.removeProduct(id);
+  }
+
+  @ApiOperation({ summary: 'Confirm validated planilla data' })
+  @Post('planillas/:id/confirmar')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('org_admin', 'supervisor', 'data_entry')
+  @HttpCode(HttpStatus.OK)
+  async confirmPlanillaData(
+    @Param('id') id: string,
+    @Body() validatedPlanillaDto: ValidatedPlanillaDto,
+  ) {
+    return this.inventoryService.saveValidatedPlanillaItems(id, validatedPlanillaDto);
   }
 
   @ApiOperation({ summary: 'Notify progress of processing' })
@@ -113,8 +139,7 @@ export class InventoryController {
     @Body('status') status: string,
     @Body('message') message: string,
   ) {
-    // This endpoint will be called by n8n to update progress
-    // You can implement WebSocket broadcasting here
+    this.progressGateway.sendProgress(planillaId, status, message);
     return {
       success: true,
       message: 'Progress notification received',

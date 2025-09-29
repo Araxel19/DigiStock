@@ -5,6 +5,7 @@ import {
   PlanillaItem,
   Category,
   Location,
+  InventorySnapshot,
 } from '../entities';
 import {
   CreateProductDto,
@@ -20,6 +21,7 @@ import {
   IPlanillaItemRepository,
   ICategoryRepository,
   ILocationRepository,
+  IInventorySnapshotRepository,
 } from '../interfaces/repositories.interface';
 import { Like } from 'typeorm';
 
@@ -36,6 +38,8 @@ export class InventoryService {
     private readonly categoryRepository: ICategoryRepository,
     @Inject('ILocationRepository')
     private readonly locationRepository: ILocationRepository,
+    @Inject('IInventorySnapshotRepository')
+    private readonly inventorySnapshotRepository: IInventorySnapshotRepository,
   ) { }
 
   // Product methods
@@ -125,28 +129,83 @@ export class InventoryService {
     planillaId: string,
     validatedPlanillaDto: ValidatedPlanillaDto,
   ): Promise<Planilla> {
-    const planilla = await this.planillaRepository.findOne({
-      where: { id: planillaId },
-    });
-
+    const planilla = await this.findPlanillaById(planillaId);
     if (!planilla) {
       throw new NotFoundException(`La planilla con ID ${planillaId} no fue encontrada.`);
     }
 
-    // Borra los items existentes para reemplazarlos con los validados
     await this.planillaItemRepository.delete({ planillaId });
 
-    for (const item of validatedPlanillaDto.items) {
-      const newItem = this.planillaItemRepository.create({
-        ...item,
-        planillaId,
+    try {
+      for (const item of validatedPlanillaDto.items) {
+        // Hotfix: Access properties using the actual keys from the request body.
+        const detectedCode = item['DETECTED CODE'];
+        const detectedName = item['DETECTED NAME'];
+        const correctedQuantity = item['CORRECTED QUANTITY'];
+        // This field from the UI contains a product CODE, not a UUID ID.
+        const correctedProductCode = item['CORRECTED PRODUCT ID'];
+
+        let product: Product | null = null;
+
+        // 1. Prioritize finding the product by the user-corrected code.
+        if (correctedProductCode && correctedProductCode.length > 0) {
+          product = await this.productRepository.findOne({ where: { code: correctedProductCode, organizationId: planilla.organizationId } });
+        }
+
+        // 2. If not found, fall back to the originally detected code.
+        if (!product && detectedCode) {
+          product = await this.productRepository.findOne({ where: { code: detectedCode, organizationId: planilla.organizationId } });
+        }
+        
+        // 3. If still not found, try the detected name.
+        if (!product && detectedName) {
+          product = await this.productRepository.findOne({ where: { name: detectedName, organizationId: planilla.organizationId } });
+        }
+
+        // 4. If the product still doesn't exist, create it using the best available info.
+        if (!product && detectedName && detectedCode) {
+          product = await this.createProduct({
+            name: detectedName,
+            code: detectedCode, // Use the originally detected code for the new product
+            organizationId: planilla.organizationId,
+          });
+        }
+
+        // 5. Create the inventory snapshot if we have a product and a quantity.
+        if (product && correctedQuantity !== null) {
+          const snapshot = this.inventorySnapshotRepository.create({
+            productId: product.id,
+            planillaId: planillaId,
+            stockQuantity: Number(correctedQuantity) || 0,
+            snapshotDate: new Date(),
+            organizationId: planilla.organizationId,
+          });
+          await this.inventorySnapshotRepository.save(snapshot);
+        }
+
+        // 6. Save the planilla item itself for auditing.
+        const newItem = this.planillaItemRepository.create({
+          ...item, // Spread original data
+          planillaId,
+          correctedProductId: product ? product.id : null, // Link to the actual product UUID
+          detectedCode: detectedCode,
+          detectedName: detectedName,
+          correctedQuantity: Number(correctedQuantity) || null,
+        });
+        await this.planillaItemRepository.save(newItem);
+      }
+
+      // 7. Update the planilla status.
+      await this.planillaRepository.update(planillaId, {
+        status: 'procesado',
+        processedAt: new Date(),
       });
-      await this.planillaItemRepository.save(newItem);
+
+      return this.findPlanillaById(planillaId);
+
+    } catch (error) {
+      console.error('Error saving validated planilla items:', error);
+      throw error;
     }
-
-    planilla.status = 'procesado';
-    planilla.processedAt = new Date();
-
-    return this.planillaRepository.save(planilla);
   }
 }

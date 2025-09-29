@@ -178,6 +178,79 @@
         Cargar más productos
       </button>
     </div>
+
+    <!-- Product View Modal -->
+    <div v-if="isViewModalOpen" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">Detalles del Producto</h3>
+          <div v-if="selectedProduct" class="mt-2 px-7 py-3 text-left">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div><strong>ID:</strong> {{ selectedProduct.id }}</div>
+              <div><strong>Código:</strong> {{ selectedProduct.code }}</div>
+              <div><strong>Nombre:</strong> {{ selectedProduct.name }}</div>
+              <div><strong>Precio:</strong> ${{ formatPrice(selectedProduct.price) }}</div>
+              <div class="md:col-span-2"><strong>Descripción:</strong> {{ selectedProduct.description || 'N/A' }}</div>
+              <div><strong>Categoría:</strong> {{ selectedProduct.category?.name || 'N/A' }}</div>
+              <div><strong>Ubicación:</strong> {{ selectedProduct.location?.name || 'N/A' }}</div>
+              <div><strong>Creado:</strong> {{ formatDate(selectedProduct.createdAt) }}</div>
+              <div><strong>Actualizado:</strong> {{ formatDate(selectedProduct.updatedAt) }}</div>
+            </div>
+          </div>
+          <div class="items-center px-4 py-3">
+            <button
+              @click="closeModal"
+              class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Product Edit Modal -->
+    <div v-if="isEditModalOpen" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+        <form @submit.prevent="saveProduct" class="mt-3">
+          <h3 class="text-lg leading-6 font-medium text-gray-900 text-center mb-4">Editar Producto</h3>
+          <div v-if="productToEdit" class="space-y-4">
+            <div>
+              <label for="edit-name" class="block text-sm font-medium text-gray-700">Nombre</label>
+              <input type="text" id="edit-name" v-model="productToEdit.name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500">
+            </div>
+            <div>
+              <label for="edit-code" class="block text-sm font-medium text-gray-700">Código</label>
+              <input type="text" id="edit-code" v-model="productToEdit.code" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500">
+            </div>
+            <div>
+              <label for="edit-description" class="block text-sm font-medium text-gray-700">Descripción</label>
+              <textarea id="edit-description" v-model="productToEdit.description" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"></textarea>
+            </div>
+            <div>
+              <label for="edit-price" class="block text-sm font-medium text-gray-700">Precio</label>
+              <input type="number" id="edit-price" v-model.number="productToEdit.price" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500">
+            </div>
+          </div>
+          <div class="items-center px-4 py-3 mt-4 flex justify-end space-x-2 bg-gray-50 -mx-5 -mb-5 rounded-b-md">
+            <button
+              type="button"
+              @click="closeEditModal"
+              class="px-4 py-2 bg-white text-gray-700 text-base font-medium rounded-md shadow-sm border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="px-4 py-2 bg-primary-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            >
+              Guardar Cambios
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -197,10 +270,18 @@ const loading = ref(false)
 const hasMore = ref(false)
 const successMessage = ref('')
 
+// View Modal State
+const selectedProduct = ref<Product | null>(null)
+const isViewModalOpen = ref(false)
+
+// Edit Modal State
+const productToEdit = ref<Partial<Product> | null>(null)
+const isEditModalOpen = ref(false)
+
 // Computed
 const products = computed(() => inventoryStore.products)
 const categories = computed(() => {
-  const cats = products.value.map(p => p.category).filter(Boolean) as Category[];
+  const cats = products.value.map((p:any) => p.category).filter(Boolean) as Category[];
   const uniqueCategories = cats.reduce((acc, cat) => {
     if (!acc.find(c => c.id === cat.id)) {
       acc.push(cat);
@@ -215,14 +296,14 @@ const filteredProducts = computed(() => {
 
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(product =>
+    filtered = filtered.filter((product:any) =>
       product.name.toLowerCase().includes(query) ||
       product.code.toLowerCase().includes(query)
     )
   }
 
   if (selectedCategory.value) {
-    filtered = filtered.filter(product => product.category?.id === selectedCategory.value)
+    filtered = filtered.filter((product:any) => product.category?.id === selectedCategory.value)
   }
 
   return filtered
@@ -250,18 +331,58 @@ const loadMore = async () => {
   // Implement pagination if needed
 }
 
+// View Modal Methods
+const viewProduct = (product: Product) => {
+  selectedProduct.value = product;
+  isViewModalOpen.value = true;
+  console.log('View product:', product)
+}
+
+const closeModal = () => {
+  isViewModalOpen.value = false;
+  selectedProduct.value = null;
+}
+
+// Edit Modal Methods
 const editProduct = (product: Product) => {
-  // Implement edit functionality
+  // Create a deep copy to avoid editing the original object directly
+  productToEdit.value = JSON.parse(JSON.stringify(product));
+  isEditModalOpen.value = true;
   console.log('Edit product:', product)
 }
 
-const viewProduct = (product: Product) => {
-  // Implement view functionality
-  console.log('View product:', product)
+const closeEditModal = () => {
+  isEditModalOpen.value = false;
+  productToEdit.value = null;
+}
+
+const saveProduct = async () => {
+  if (!productToEdit.value || !productToEdit.value.id) return;
+
+  // Create a DTO-compliant payload
+  const payload: Partial<Product> = {
+    name: productToEdit.value.name,
+    code: productToEdit.value.code,
+    description: productToEdit.value.description,
+    price: productToEdit.value.price,
+  };
+
+  try {
+    await inventoryStore.updateProduct(productToEdit.value.id, payload);
+    closeEditModal();
+    // The store action already updates the local state, so a full refresh might not be needed
+    // await refreshProducts(); 
+    successMessage.value = 'Producto actualizado con éxito.';
+    setTimeout(() => successMessage.value = '', 5000);
+  } catch (error) {
+    console.error('Error updating product:', error);
+    // Optionally, show an error message to the user
+  }
 }
 
 // Utility functions
 const formatPrice = (price: number): string => {
+  if (typeof price !== 'number') return '0.00';
   return new Intl.NumberFormat('es-MX', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
@@ -269,6 +390,7 @@ const formatPrice = (price: number): string => {
 }
 
 const formatDate = (dateString: string): string => {
+  if (!dateString) return 'N/A';
   return new Date(dateString).toLocaleDateString('es-MX', {
     year: 'numeric',
     month: 'short',

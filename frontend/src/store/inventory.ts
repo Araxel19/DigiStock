@@ -39,12 +39,27 @@ export const useInventoryStore = defineStore('inventory', () => {
     }
   }
 
+  const updateProduct = async (id: string, data: Partial<Product>) => {
+    loading.value = true;
+    try {
+      const updatedProduct = await inventoryService.updateProduct(id, data);
+      const index = products.value.findIndex(p => p.id === id);
+      if (index !== -1) {
+        products.value[index] = updatedProduct;
+      }
+      return updatedProduct;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   return {
     products,
     planillas,
     loading,
     fetchProducts,
     fetchPlanillas,
-    uploadPlanilla
+    uploadPlanilla,
+    updateProduct,
   }
 })

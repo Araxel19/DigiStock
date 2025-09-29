@@ -44,7 +44,7 @@ export class InventoryController {
   @ApiOperation({ summary: 'Get products' })
   @Get('products')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('org_admin', 'supervisor')
+  @Roles('org_admin', 'supervisor', 'data_entry')
   findAllProducts(@Query('search') search: string, @Req() req) {
     return this.inventoryService.findAllProducts(req.user.organizationId, search);
   }
@@ -60,7 +60,7 @@ export class InventoryController {
   @ApiOperation({ summary: 'Update product' })
   @Put('products/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('org_admin')
+  @Roles('org_admin', 'supervisor', 'data_entry')
   updateProduct(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
     return this.inventoryService.updateProduct(id, updateProductDto);
   }

@@ -16,19 +16,19 @@
         <table class="min-w-full bg-white">
           <thead>
             <tr>
-              <th class="py-2 px-4 border-b">Código Detectado</th>
-              <th class="py-2 px-4 border-b">Nombre Detectado</th>
-              <th class="py-2 px-4 border-b">Cantidad Detectada</th>
-              <th class="py-2 px-4 border-b">Producto Corregido</th>
-              <th class="py-2 px-4 border-b">Cantidad Corregida</th>
+              <th class="py-2 px-4 border-b">Código</th>
+              <th class="py-2 px-4 border-b">Nombre</th>
+              <th class="py-2 px-4 border-b">Descripción</th>
+              <th class="py-2 px-4 border-b">Precio</th>
+              <th class="py-2 px-4 border-b">Cantidad</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(item, index) in editableData" :key="index">
               <td class="py-2 px-4 border-b"><input type="text" v-model="item.detectedCode" class="w-full p-1 border rounded"></td>
               <td class="py-2 px-4 border-b"><input type="text" v-model="item.detectedName" class="w-full p-1 border rounded"></td>
-              <td class="py-2 px-4 border-b"><input type="number" v-model="item.detectedQuantity" class="w-full p-1 border rounded"></td>
-              <td class="py-2 px-4 border-b"><input type="text" v-model="item.correctedProductId" class="w-full p-1 border rounded"></td>
+              <td class="py-2 px-4 border-b"><input type="text" v-model="item.detectedQuantity" class="w-full p-1 border rounded"></td>
+              <td class="py-2 px-4 border-b"><input type="number" v-model="item.correctedProductId" class="w-full p-1 border rounded"></td>
               <td class="py-2 px-4 border-b"><input type="number" v-model="item.correctedQuantity" class="w-full p-1 border rounded"></td>
             </tr>
           </tbody>
@@ -59,7 +59,8 @@ const editableData = ref<any[]>([]);
 const isLoading = ref(true); // Estado para manejar la carga
 
 const getImageUrl = (filePath: string) => {
-  return `http://localhost:3000/app/${filePath.replace(/\\/g, '/')}`;
+  // filePath = 'uploads/planillas/xxxx.png'
+  return `http://localhost:3000/${filePath.replace(/\\/g, '/')}`;
 };
 
 onMounted(async () => {
@@ -69,11 +70,50 @@ onMounted(async () => {
     const data = await inventoryService.getPlanillaById(planillaId);
     planilla.value = data;
     
-    // Si existen datos del OCR, los copia a la tabla editable
     if (data && data.rawOcrData) {
-      // Se clona el array para evitar mutaciones directas del estado original
-      editableData.value = JSON.parse(JSON.stringify(data.rawOcrData));
+      let parsedObject: any = null;
+
+      try {
+        // Si ya viene como objeto, no hace falta parsear
+        if (typeof data.rawOcrData === 'object') {
+          parsedObject = data.rawOcrData;
+        } else if (typeof data.rawOcrData === 'string') {
+          // Limpia comillas escapadas o texto adicional
+          const cleanString = data.rawOcrData
+            .replace(/^"|"$/g, '') // elimina comillas externas
+            .replace(/\\"/g, '"')  // corrige comillas escapadas
+            .trim();
+
+          const jsonStart = cleanString.indexOf('{');
+          const jsonEnd = cleanString.lastIndexOf('}');
+          if (jsonStart !== -1 && jsonEnd > jsonStart) {
+            parsedObject = JSON.parse(cleanString.substring(jsonStart, jsonEnd + 1));
+          }
+        }
+        if (Array.isArray(parsedObject)) {
+          editableData.value = parsedObject.map((item: any) => ({
+            detectedCode: item['DETECTED CODE'] || '',
+            detectedName: item['DETECTED NAME'] || '',
+            detectedQuantity: item['DETECTED QUANTITY'] || '',
+            correctedProductId: item['CORRECTED PRODUCT ID'] || '',
+            correctedQuantity: item['CORRECTED QUANTITY'] || '',
+          }));
+        } else if (parsedObject && Array.isArray(parsedObject.inventario)) {
+          editableData.value = parsedObject.inventario.map((item: any) => ({
+            detectedCode: item['DETECTED CODE'] || '',
+            detectedName: item['DETECTED NAME'] || '',
+            detectedQuantity: item['DETECTED QUANTITY'] || '',
+            correctedProductId: item['CORRECTED PRODUCT ID'] || '',
+            correctedQuantity: item['CORRECTED QUANTITY'] || '',
+          }));
+        } else {
+          console.warn('⚠️ No se encontró un formato de inventario válido en el rawOcrData:', parsedObject);
+        }
+      } catch (err) {
+        console.error('Error parseando rawOcrData:', err, data.rawOcrData);
+      }
     }
+
   } catch (error) {
     console.error('Error fetching planilla:', error);
     planilla.value = null; // En caso de error, se limpia la planilla

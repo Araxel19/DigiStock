@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS products (
     name VARCHAR(255) NOT NULL,
     description TEXT,
     price DECIMAL(12, 2) DEFAULT 0,
+    cantidad INTEGER DEFAULT 0,
     category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
     location_id UUID REFERENCES locations(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

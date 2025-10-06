@@ -128,6 +128,12 @@
                 ${{ formatPrice(product.price) }}
               </p>
             </div>
+            <div>
+              <p class="text-xs text-gray-500 uppercase tracking-wide">Cantidad</p>
+              <p class="text-lg font-semibold text-gray-900">
+                {{ product.cantidad }}
+              </p>
+            </div>
           </div>
 
           <div v-if="product.category || product.location" class="mb-4 space-y-1">
@@ -190,6 +196,7 @@
               <div><strong>Código:</strong> {{ selectedProduct.code }}</div>
               <div><strong>Nombre:</strong> {{ selectedProduct.name }}</div>
               <div><strong>Precio:</strong> ${{ formatPrice(selectedProduct.price) }}</div>
+              <div><strong>Cantidad:</strong> {{ selectedProduct.cantidad }}</div>
               <div class="md:col-span-2"><strong>Descripción:</strong> {{ selectedProduct.description || 'N/A' }}</div>
               <div><strong>Categoría:</strong> {{ selectedProduct.category?.name || 'N/A' }}</div>
               <div><strong>Ubicación:</strong> {{ selectedProduct.location?.name || 'N/A' }}</div>
@@ -229,7 +236,11 @@
             </div>
             <div>
               <label for="edit-price" class="block text-sm font-medium text-gray-700">Precio</label>
-              <input type="number" id="edit-price" v-model.number="productToEdit.price" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500">
+              <input type="number" step="0.01" id="edit-price" v-model.number="productToEdit.price" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500">
+            </div>
+            <div>
+              <label for="edit-cantidad" class="block text-sm font-medium text-gray-700">Cantidad</label>
+              <input type="number" id="edit-cantidad" v-model.number="productToEdit.cantidad" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500">
             </div>
           </div>
           <div class="items-center px-4 py-3 mt-4 flex justify-end space-x-2 bg-gray-50 -mx-5 -mb-5 rounded-b-md">
@@ -365,6 +376,7 @@ const saveProduct = async () => {
     code: productToEdit.value.code,
     description: productToEdit.value.description,
     price: productToEdit.value.price,
+    cantidad: productToEdit.value.cantidad,
   };
 
   try {
@@ -381,12 +393,14 @@ const saveProduct = async () => {
 }
 
 // Utility functions
-const formatPrice = (price: number): string => {
-  if (typeof price !== 'number') return '0.00';
+const formatPrice = (price: number | string): string => {
+  const numericPrice = Number(price);
+  if (isNaN(numericPrice)) return '0.00';
+
   return new Intl.NumberFormat('es-MX', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
-  }).format(price)
+  }).format(numericPrice);
 }
 
 const formatDate = (dateString: string): string => {

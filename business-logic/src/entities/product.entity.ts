@@ -38,6 +38,9 @@ export class Product {
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   price: number;
 
+  @Column({ type: 'integer', default: 0 })
+  cantidad: number;
+
   @Column({ type: 'uuid', name: 'category_id', nullable: true })
   categoryId: string;
 

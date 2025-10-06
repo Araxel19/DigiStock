@@ -16,6 +16,7 @@ export interface Product {
   name: string;
   description?: string;
   price: number;
+  cantidad: number;
   organizationId: string;
   category?: Category;
   location?: Location;

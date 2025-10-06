@@ -8,12 +8,12 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "5af03739-f741-4bd2-8b0b-03f98ca5bcb9",
+      "id": "cbfab2d3-305d-485c-b613-626fd970310e",
       "name": "Webhook OCR",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -1296,
+        -1504,
         192
       ],
       "webhookId": "ocr-process"
@@ -29,12 +29,12 @@
           ]
         }
       },
-      "id": "adea3e00-dfbd-4a7e-bec7-c5883ca4d23b",
+      "id": "ee9e853d-8170-48c9-9e92-b6bb60d4c943",
       "name": "Check Base64",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -1072,
+        -1280,
         192
       ]
     },
@@ -44,12 +44,12 @@
         "responseBody": "{\"success\": false, \"message\": \"imageBase64 is required\", \"data\": null}",
         "options": {}
       },
-      "id": "8eac22c6-cd2d-4060-b255-904cfd28e6fc",
+      "id": "32c495c5-61d6-4b3c-a785-38c29e33df3c",
       "name": "Error Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -864,
+        -1072,
         304
       ]
     },
@@ -61,14 +61,14 @@
       "type": "n8n-nodes-base.mistralAi",
       "typeVersion": 1,
       "position": [
-        -640,
+        -848,
         96
       ],
-      "id": "a5786dad-aab3-4e33-996f-0e7ef717b1a5",
+      "id": "ff606caf-b59b-4879-a8fc-8cae6d880aec",
       "name": "Extract text",
       "credentials": {
         "mistralCloudApi": {
-          "id": "sZLsAOMbb9pzDHDd",
+          "id": "UKGuIOiOPvTfXgYB",
           "name": "Mistral Cloud account"
         }
       }
@@ -82,23 +82,23 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        -864,
+        -1072,
         96
       ],
-      "id": "33554340-7919-43e4-a201-93bd0f612abe",
+      "id": "3e99bfce-9b65-4641-912e-f11de8f001ad",
       "name": "Convert to File"
     },
     {
       "parameters": {
-        "jsCode": "// Lee el texto del OCR del nodo anterior\nconst text = $json.pages?.[0]?.markdown;\nif (!text) {\n  throw new Error(\"No se encontró texto en la entrada del OCR.\");\n}\n\n// Obtiene el planillaId que el backend envió al webhook\nconst planillaId = $('Webhook OCR').first().json.body.planillaId;\n\n// Separa las líneas del texto\nconst lines = text.split(\"\\n\").filter(l => l.trim() !== \"\");\n\n// Busca la línea del encabezado usando las palabras correctas y en minúsculas\nconst headerIndex = lines.findIndex(l => \n  l.toLowerCase().includes(\"detected code\") && l.toLowerCase().includes(\"detected name\")\n);\n\n// --- ¡ESTA ES LA CORRECCIÓN CLAVE! ---\n// Si no se encuentra el encabezado, lanza un error claro en lugar de fallar silenciosamente.\nif (headerIndex === -1) {\n  throw new Error(\"No se pudo encontrar la fila de encabezado ('Detected Code', 'Detected Name') en el texto del OCR. El texto extraído fue:\\n\\n\" + text);\n}\n\n// Extrae los encabezados de la línea encontrada\nconst headers = lines[headerIndex].split(\"|\").map(h => h.trim()).filter(h => h);\n\n// Procesa las filas de datos que están después del encabezado\nconst rows = lines.slice(headerIndex + 1).map(line => {\n  const cols = line.split(\"|\").map(c => c.trim()).filter(c => c);\n  if (cols.length < headers.length) return null; // descarta filas incompletas\n\n  let obj = {};\n  headers.forEach((h, i) => {\n    obj[h] = cols[i] || \"\";\n  });\n  return obj;\n}).filter(r => r);\n\n// Devuelve cada producto como un item separado, \"etiquetado\" con el planillaId\nreturn rows.map(producto => ({\n  json: {\n    producto: producto,\n    planillaId: planillaId\n  }\n}));"
+        "jsCode": "// Lee el texto del OCR del nodo anterior\nconst text = $json.pages?.[0]?.markdown;\nif (!text) {\n  throw new Error(\"No se encontró texto en la entrada del OCR.\");\n}\n\n// Obtiene el planillaId que el backend envió al webhook\nconst planillaId = $('Webhook OCR').first().json.body.planillaId;\n\n// Separa las líneas del texto (elimina vacías)\nconst lines = text.split(\"\\n\").filter(l => l.trim() !== \"\");\n\n// Busca la línea del encabezado con las palabras clave de la planilla\nconst headerIndex = lines.findIndex(l =>\n  l.toLowerCase().includes(\"código\") &&\n  l.toLowerCase().includes(\"nombre\") &&\n  l.toLowerCase().includes(\"precio\")\n);\n\n// Si no se encuentra el encabezado, lanza un error descriptivo\nif (headerIndex === -1) {\n  throw new Error(\n    \"No se pudo encontrar la fila de encabezado ('Código', 'Nombre del producto', etc.) en el texto del OCR. Texto extraído:\\n\\n\" + text\n  );\n}\n\n// Extrae los encabezados dividiendo por |\nconst headers = lines[headerIndex]\n  .split(\"|\")\n  .map(h => h.trim().toLowerCase())\n  .filter(h => h);\n\n// Procesa las filas de datos que están después del encabezado\nconst rows = lines.slice(headerIndex + 1).map(line => {\n  const cols = line.split(\"|\").map(c => c.trim()).filter(c => c);\n  if (cols.length < headers.length) return null; // descarta filas incompletas\n\n  let obj = {};\n  headers.forEach((h, i) => {\n    // Limpia valores y reemplaza los \"---\" por vacío\n    let value = cols[i] || \"\";\n    if (value === \"---\") value = \"\";\n    obj[h] = value;\n  });\n\n  return obj;\n}).filter(r => r);\n\n// Filtra filas que no sean datos (por ejemplo SUBTOTAL o TOTAL)\nconst productos = rows.filter(r =>\n  !r[\"código\"]?.toLowerCase().includes(\"subtotal\") &&\n  !r[\"código\"]?.toLowerCase().includes(\"total\") &&\n  !r[\"código\"]?.toLowerCase().includes(\"iva\")\n);\n\n// Devuelve cada producto como un item separado con su planillaId\nreturn productos.map(producto => ({\n  json: {\n    producto,\n    planillaId\n  }\n}));\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -416,
+        -624,
         96
       ],
-      "id": "1ac0c18f-96bf-4ebb-88b7-37d5d7605ae0",
+      "id": "c088f9e4-7b77-4103-96f3-d54975e4f4ce",
       "name": "Code in JavaScript"
     },
     {
@@ -108,10 +108,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -208,
+        -416,
         96
       ],
-      "id": "35facbdf-d5d6-4331-9a56-08d048d01998",
+      "id": "2b386024-8d9c-4a42-8777-7e4e2c98c97a",
       "name": "Code in JavaScript1"
     },
     {
@@ -136,10 +136,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        208,
+        0,
         224
       ],
-      "id": "fcb96d62-6a87-4a21-abe4-b42a87dcf006",
+      "id": "8ceaedcb-89ab-47e6-8b18-e1e7bb0d2999",
       "name": "Notificar al BackEnd"
     },
     {
@@ -164,10 +164,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        208,
+        0,
         0
       ],
-      "id": "52585323-61be-4799-abe1-320cfe93e508",
+      "id": "53d3247b-a95a-4cd5-8977-32b4436d0bb9",
       "name": "Enviar los Resultados",
       "executeOnce": false,
       "alwaysOutputData": false,
@@ -180,10 +180,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -16,
+        -224,
         208
       ],
-      "id": "4245a03d-91f6-409b-9f11-bc8c85acffd9",
+      "id": "1dc3f31f-9fbc-48d8-b76f-e6c7b485cf3b",
       "name": "Code in JavaScript2"
     }
   ],
@@ -267,11 +267,6 @@
         ]
       ]
     },
-    "Enviar los Resultados": {
-      "main": [
-        []
-      ]
-    },
     "Code in JavaScript2": {
       "main": [
         [
@@ -288,11 +283,11 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "e16a6c8f-1ff4-41f4-ad45-c09bcf3dacb7",
+  "versionId": "a6e19ff0-92a5-4d8b-b3fb-00aab0978c71",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "4060635e2c10e1925268e83e96cf57e13801bf6b8de0d56bb97b48dd1f9ea3ef"
+    "instanceId": "cc514147faf9e4a66832cac2fe1d1c20199ce0757cd22757041444a3876b1c45"
   },
-  "id": "MSvbyFimm7aleJ0Z",
+  "id": "fj46VtbSUYqCMrJQ",
   "tags": []
 }

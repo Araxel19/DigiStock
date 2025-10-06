@@ -129,83 +129,110 @@ export class InventoryService {
     planillaId: string,
     validatedPlanillaDto: ValidatedPlanillaDto,
   ): Promise<Planilla> {
-    const planilla = await this.findPlanillaById(planillaId);
+    const planilla = await this.planillaRepository.findOne({ where: { id: planillaId } });
     if (!planilla) {
-      throw new NotFoundException(`La planilla con ID ${planillaId} no fue encontrada.`);
+      throw new NotFoundException(`Planilla with ID ${planillaId} not found.`);
     }
+    const { organizationId } = planilla;
 
-    await this.planillaItemRepository.delete({ planillaId });
+    return this.productRepository.manager.transaction(async transactionalEntityManager => {
+      const productRepo = transactionalEntityManager.getRepository(Product);
+      const categoryRepo = transactionalEntityManager.getRepository(Category);
+      const locationRepo = transactionalEntityManager.getRepository(Location);
+      const planillaItemRepo = transactionalEntityManager.getRepository(PlanillaItem);
+      const planillaRepo = transactionalEntityManager.getRepository(Planilla);
 
-    try {
+      await planillaItemRepo.delete({ planillaId });
+
       for (const item of validatedPlanillaDto.items) {
-        // Hotfix: Access properties using the actual keys from the request body.
-        const detectedCode = item['DETECTED CODE'];
-        const detectedName = item['DETECTED NAME'];
-        const correctedQuantity = item['CORRECTED QUANTITY'];
-        // This field from the UI contains a product CODE, not a UUID ID.
-        const correctedProductCode = item['CORRECTED PRODUCT ID'];
+        // --- Define keys based on ACTUAL request data from Vue component ---
+        const productCode = item['codigo'];
+        const productName = item['nombre_del_producto'];
+        const productDescription = item['descripcion'];
+        const categoryName = item['categoria'];
+        const locationName = item['ubicacion'];
+        const quantity = Number(item['cantidad'] || 0);
+        const price = Number(item['precio'] || 0);
 
+        let matchStatus: 'matched' | 'unmatched' | 'manual_override' | 'ambiguous' = 'unmatched';
+
+        // --- Get or Create Category ---
+        let category: Category | null = null;
+        if (categoryName && categoryName !== 'Sin categoría') {
+          category = await categoryRepo.createQueryBuilder("category")
+            .where("LOWER(category.name) = LOWER(:name)", { name: categoryName })
+            .andWhere("category.organizationId = :organizationId", { organizationId })
+            .getOne();
+          if (!category) {
+            category = await categoryRepo.save({ name: categoryName, organizationId });
+          }
+        }
+
+        // --- Get or Create Location ---
+        let location: Location | null = null;
+        if (locationName && locationName !== 'No asignada') {
+          location = await locationRepo.createQueryBuilder("location")
+            .where("LOWER(location.name) = LOWER(:name)", { name: locationName })
+            .andWhere("location.organizationId = :organizationId", { organizationId })
+            .getOne();
+          if (!location) {
+            location = await locationRepo.save({ name: locationName, organizationId });
+          }
+        }
+
+        // --- Get or Create Product ---
         let product: Product | null = null;
-
-        // 1. Prioritize finding the product by the user-corrected code.
-        if (correctedProductCode && correctedProductCode.length > 0) {
-          product = await this.productRepository.findOne({ where: { code: correctedProductCode, organizationId: planilla.organizationId } });
+        if (productCode && productCode !== '---') {
+          product = await productRepo.findOne({ where: { code: productCode, organizationId } });
         }
 
-        // 2. If not found, fall back to the originally detected code.
-        if (!product && detectedCode) {
-          product = await this.productRepository.findOne({ where: { code: detectedCode, organizationId: planilla.organizationId } });
-        }
-        
-        // 3. If still not found, try the detected name.
-        if (!product && detectedName) {
-          product = await this.productRepository.findOne({ where: { name: detectedName, organizationId: planilla.organizationId } });
-        }
-
-        // 4. If the product still doesn't exist, create it using the best available info.
-        if (!product && detectedName && detectedCode) {
-          product = await this.createProduct({
-            name: detectedName,
-            code: detectedCode, // Use the originally detected code for the new product
-            organizationId: planilla.organizationId,
-          });
-        }
-
-        // 5. Create the inventory snapshot if we have a product and a quantity.
-        if (product && correctedQuantity !== null) {
-          const snapshot = this.inventorySnapshotRepository.create({
-            productId: product.id,
-            planillaId: planillaId,
-            stockQuantity: Number(correctedQuantity) || 0,
-            snapshotDate: new Date(),
-            organizationId: planilla.organizationId,
-          });
-          await this.inventorySnapshotRepository.save(snapshot);
+        if (product) {
+          // Product exists: update its quantity and other details
+          product.cantidad = (product.cantidad || 0) + quantity;
+          product.price = price;
+          product.description = productDescription;
+          product.categoryId = category ? category.id : product.categoryId;
+          product.locationId = location ? location.id : product.locationId;
+          await productRepo.save(product);
+          matchStatus = 'matched';
+        } else if (productCode && productCode !== '---' && productName && productName !== 'Sin nombre') {
+          // Product does not exist: create it
+          const newProductData = {
+            organizationId,
+            code: productCode,
+            name: productName,
+            description: productDescription,
+            cantidad: quantity,
+            price: price,
+            categoryId: category ? category.id : null,
+            locationId: location ? location.id : null,
+          };
+          product = await productRepo.save(newProductData);
+          matchStatus = 'manual_override';
         }
 
-        // 6. Save the planilla item itself for auditing.
-        const newItem = this.planillaItemRepository.create({
-          ...item, // Spread original data
-          planillaId,
-          correctedProductId: product ? product.id : null, // Link to the actual product UUID
-          detectedCode: detectedCode,
-          detectedName: detectedName,
-          correctedQuantity: Number(correctedQuantity) || null,
-        });
-        await this.planillaItemRepository.save(newItem);
+        // --- Create PlanillaItem for Auditing ---
+        if (product) {
+          const newPlanillaItemData = {
+            planillaId,
+            detectedCode: productCode,
+            detectedName: productName,
+            detectedQuantity: quantity,
+            correctedProductId: product.id,
+            correctedQuantity: quantity,
+            matchStatus: matchStatus,
+          };
+          await planillaItemRepo.save(newPlanillaItemData);
+        }
       }
 
-      // 7. Update the planilla status.
-      await this.planillaRepository.update(planillaId, {
+      await planillaRepo.update(planillaId, {
         status: 'procesado',
         processedAt: new Date(),
+        validatedAt: new Date(),
       });
 
       return this.findPlanillaById(planillaId);
-
-    } catch (error) {
-      console.error('Error saving validated planilla items:', error);
-      throw error;
-    }
+    });
   }
 }

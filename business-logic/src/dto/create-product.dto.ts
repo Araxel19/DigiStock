@@ -13,9 +13,13 @@ export class CreateProductDto {
   @IsOptional()
   description?: string;
 
-  @IsDecimal()
+  @IsNumber({ maxDecimalPlaces: 2 })
   @IsOptional()
   price?: number;
+
+  @IsNumber()
+  @IsOptional()
+  cantidad?: number;
 
   @IsUUID()
   @IsNotEmpty()

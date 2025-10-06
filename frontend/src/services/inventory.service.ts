@@ -61,5 +61,10 @@ export const inventoryService = {
   async confirmPlanillaData(id: string, validatedData: { items: any[] }): Promise<any> {
     const response = await api.post(`/inventory/planillas/${id}/confirmar`, validatedData);
     return response.data;
+  },
+
+  async getStats(): Promise<any> {
+    const response = await api.get('/inventory/stats');
+    return response.data;
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, UnauthorizedException } from '@nestjs/common';
 import {
   Product,
   Planilla,
@@ -68,6 +68,10 @@ export class InventoryService {
   }
 
   async updateProduct(id: string, updateProductDto: UpdateProductDto): Promise<Product> {
+    const product = await this.findProductById(id);
+    if (updateProductDto.organizationId && product.organizationId !== updateProductDto.organizationId) {
+      throw new UnauthorizedException('You are not allowed to update this product.');
+    }
     await this.productRepository.update(id, updateProductDto);
     return this.findProductById(id);
   }
@@ -234,5 +238,55 @@ export class InventoryService {
 
       return this.findPlanillaById(planillaId);
     });
+  }
+
+  async getDashboardStats(organizationId: string) {
+    const totalProducts = (await this.productRepository.find({ where: { organizationId } })).length;
+
+    const processedPlanillasCount = (await this.planillaRepository.find({
+      where: { organizationId, status: 'procesado' },
+    })).length;
+
+    const pendingPlanillasCount = (await this.planillaRepository.find({
+      where: { organizationId, status: 'validacion_pendiente' },
+    })).length;
+
+    const processedPlanillas = await this.planillaRepository.find({
+      where: { organizationId, status: 'procesado' },
+      relations: ['items'],
+    });
+
+    let ocrSuccessRate = 0;
+    if (processedPlanillas.length > 0) {
+      const successRates = processedPlanillas.map(p => {
+        if (p.items.length === 0) return 0;
+        const matchedItems = p.items.filter(i => i.matchStatus === 'matched').length;
+        return (matchedItems / p.items.length) * 100;
+      });
+      ocrSuccessRate = successRates.reduce((acc, rate) => acc + rate, 0) / successRates.length;
+    }
+
+    const recentPlanillas = await this.planillaRepository.find({
+      where: { organizationId, status: 'procesado' },
+      order: { processedAt: 'DESC' },
+      take: 2,
+    });
+
+    const recentProducts = await this.productRepository.find({
+      where: { organizationId },
+      order: { createdAt: 'DESC' },
+      take: 3,
+    });
+
+    return {
+      totalProducts,
+      processedPlanillas: processedPlanillasCount,
+      pendingPlanillas: pendingPlanillasCount,
+      ocrSuccessRate: Math.round(ocrSuccessRate),
+      recentActivity: {
+        planillas: recentPlanillas,
+        products: recentProducts,
+      },
+    };
   }
 }

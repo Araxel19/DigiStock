@@ -283,48 +283,37 @@ async function loadSuperAdminData() {
 
 async function loadInventoryData() {
   try {
-    const [products, planillas] = await Promise.all([
-      inventoryService.getProducts(),
-      inventoryService.getPlanillas(),
-    ])
+    const dashboardStats = await inventoryService.getStats();
+    stats.value = dashboardStats;
 
-    stats.value.totalProducts = products.length
-    stats.value.processedPlanillas = planillas.filter(p => p.status === 'procesado').length
-    stats.value.pendingPlanillas = planillas.filter(p => p.status === 'validacion_pendiente').length
-    pendingPlanillas.value = planillas.filter(p => p.status === 'validacion_pendiente');
+    const recentPlanillas = dashboardStats.recentActivity.planillas.map((p: any) => ({
+      id: `p-${p.id}`,
+      type: 'planilla',
+      title: 'Planilla procesada',
+      description: `${p.fileName}`,
+      time: new Date(p.processedAt!).toLocaleString(),
+    }));
 
-    const recentPlanillas = planillas
-      .filter(p => p.status === 'procesado' && p.processedAt)
-      .sort((a, b) => new Date(b.processedAt!).getTime() - new Date(a.processedAt!).getTime())
-      .slice(0, 2)
-      .map(p => ({
-        id: `p-${p.id}`,
-        type: 'planilla',
-        title: 'Planilla procesada',
-        description: `${p.fileName}`,
-        time: new Date(p.processedAt!).toLocaleString(),
-      }))
+    const recentProducts = dashboardStats.recentActivity.products.map((p: any) => ({
+      id: `prod-${p.id}`,
+      type: 'product',
+      title: 'Nuevo producto agregado',
+      description: `${p.code} - ${p.name}`,
+      time: new Date(p.createdAt).toLocaleString(),
+    }));
 
-    const recentProducts = products
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 3)
-      .map(p => ({
-        id: `prod-${p.id}`,
-        type: 'product',
-        title: 'Nuevo producto agregado',
-        description: `${p.code} - ${p.name}`,
-        time: new Date(p.createdAt).toLocaleString(),
-      }))
-    
     recentActivity.value = [...recentPlanillas, ...recentProducts]
       .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
-      .slice(0, 5)
+      .slice(0, 5);
+
+    const planillas = await inventoryService.getPlanillas();
+    pendingPlanillas.value = planillas.filter(p => p.status === 'validacion_pendiente');
 
   } catch (error) {
     console.error('Error loading inventory data:', error)
-    // Clear data on error to avoid showing stale information
     stats.value = { totalProducts: 0, processedPlanillas: 0, pendingPlanillas: 0, ocrSuccessRate: 0 }
     recentActivity.value = []
+    pendingPlanillas.value = []
   }
 }
 

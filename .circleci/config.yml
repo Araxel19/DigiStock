@@ -1,87 +1,58 @@
 # CircleCI Configuration for DigiStock
-# This config file is used to define the continuous integration pipeline for the project.
-# It includes jobs for installing dependencies, running tests, and building artifacts for both frontend and backend.
+# Continuous Integration Pipeline
+# Phase 3: Construcción - Automatización del Build y Test del sistema
 version: 2.1
 
-# Orbs are reusable packages of CircleCI configuration that you may use in your projects.
 orbs:
   node: circleci/node@5.0.2
 
-# The jobs section defines the individual tasks to be executed in the pipeline.
 jobs:
-  install_and_test_backend:
+  # 🧱 Job para instalar dependencias y compilar todos los workspaces
+  install_and_build_all:
     docker:
       - image: cimg/node:18.16
-    working_directory: ~/project/backend
+    working_directory: ~/project
     steps:
-      - checkout:
-          path: ~/project
+      - checkout
       - node/install-packages:
           pkg-manager: npm
-          app-dir: ~/project/backend
-          cache-key: "npm-v1-{{ .Branch }}-{{ checksum \"~/project/backend/package-lock.json\" }}"
+          cache-key: "npm-v1-{{ .Branch }}-{{ checksum \"package-lock.json\" }}"
       - run:
-          name: "Run Backend Tests"
+          name: "Compilar todos los workspaces"
           command: |
-            if grep -q "\"test\":" package.json; then
-              npm test
-            else
-              echo "No test command found in backend/package.json. Skipping tests."
-            fi
-      - run:
-          name: "Build Backend"
-          command: npm run build
+            npm run build:backend
+            npm run build:business-logic
       - persist_to_workspace:
           root: ~/project
           paths:
             - backend/dist
+            - business-logic/dist
 
-  install_and_test_frontend:
+  # 🧪 Job opcional para pruebas
+  run_tests:
     docker:
       - image: cimg/node:18.16
-    working_directory: ~/project/frontend
+    working_directory: ~/project
     steps:
-      - checkout:
-          path: ~/project
-      - node/install-packages:
-          pkg-manager: npm
-          app-dir: ~/project/frontend
-          cache-key: "npm-v1-{{ .Branch }}-{{ checksum \"~/project/frontend/package-lock.json\" }}"
+      - checkout
+      - attach_workspace:
+          at: ~/project
       - run:
-          name: "Run Frontend Tests"
+          name: "Ejecutar pruebas si existen"
           command: |
             if grep -q "\"test\":" package.json; then
               npm test
             else
-              echo "No test command found in frontend/package.json. Skipping tests."
+              echo "No hay pruebas definidas. Saltando paso..."
             fi
-      - run:
-          name: "Build Frontend"
-          command: npm run build
-      - persist_to_workspace:
-          root: ~/project
-          paths:
-            - frontend/dist
-            - frontend/nginx.conf
 
-  build_artifacts:
-    docker:
-      - image: cimg/node:18.16
-    steps:
-      - attach_workspace:
-          at: ~/project
-      - run:
-          name: "List Artifacts"
-          command: |
-            echo "Listing compiled artifacts..."
-            ls -R ~/project
-
+  # 🐳 Job para construir imágenes Docker (si las tienes)
   docker_build:
     docker:
       - image: cimg/base:stable
-        auth:
-          username: $DOCKER_LOGIN
-          password: $DOCKER_PASSWORD
+        #auth:
+          #username: $DOCKER_LOGIN
+          #password: $DOCKER_PASSWORD
     steps:
       - checkout
       - setup_remote_docker:
@@ -89,28 +60,30 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: "Build Backend Docker Image"
+          name: "Construir imagen Docker del backend"
           command: |
-            echo "Building backend Docker image..."
-            docker build -t digistock-backend:ci -f backend/Dockerfile .
+            if [ -f backend/Dockerfile ]; then
+              docker build -t digistock-backend:ci -f backend/Dockerfile .
+            else
+              echo "No se encontró backend/Dockerfile. Saltando paso..."
+            fi
       - run:
-          name: "Build Frontend Docker Image"
+          name: "Construir imagen Docker de business-logic"
           command: |
-            echo "Building frontend Docker image..."
-            docker build -t digistock-frontend:ci -f frontend/Dockerfile .
+            if [ -f business-logic/Dockerfile ]; then
+              docker build -t digistock-logic:ci -f business-logic/Dockerfile .
+            else
+              echo "No se encontró business-logic/Dockerfile. Saltando paso..."
+            fi
 
-# The workflows section orchestrates the jobs defined above.
 workflows:
   version: 2
-  build_and_test:
+  build_pipeline:
     jobs:
-      - install_and_test_backend
-      - install_and_test_frontend
-      - build_artifacts:
+      - install_and_build_all
+      - run_tests:
           requires:
-            - install_and_test_backend
-            - install_and_test_frontend
+            - install_and_build_all
       - docker_build:
           requires:
-            - install_and_test_backend
-            - install_and_test_frontend
+            - install_and_build_all

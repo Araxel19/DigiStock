@@ -82,9 +82,10 @@ jobs:
       - node/install-packages:
           pkg-manager: npm
       - run:
-          name: "Ejecutar análisis de SonarCloud"
+          name: "Dar permisos y ejecutar SonarCloud"
           command: |
-            npx sonar-scanner \
+            chmod +x ./node_modules/sonar-scanner/bin/sonar-scanner
+            ./node_modules/sonar-scanner/bin/sonar-scanner \
               -Dsonar.organization=DigiStock \
               -Dsonar.projectKey=Araxel19_DigiStock \
               -Dsonar.login=$SONAR_TOKEN \

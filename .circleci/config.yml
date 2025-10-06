@@ -55,7 +55,7 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
       - attach_workspace:
-          at: ./
+          at: ./ 
       - run:
           name: "Construir imagen Docker del backend"
           command: |
@@ -80,11 +80,7 @@ jobs:
     working_directory: ~/project
     steps:
       - checkout
-      - sonarcloud/scan:
-          organization: DigiStock
-          projectKey: Araxel19_DigiStock
-          projectName: DigiStock
-          token: $SONAR_TOKEN
+      - sonarcloud/scan
 
 workflows:
   version: 2

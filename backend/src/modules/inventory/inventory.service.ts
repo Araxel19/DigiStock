@@ -57,4 +57,8 @@ export class InventoryService {
   saveValidatedPlanillaItems(id: string, validatedPlanillaDto: ValidatedPlanillaDto) {
     return this.businessInventoryService.saveValidatedPlanillaItems(id, validatedPlanillaDto);
   }
+
+  getDashboardStats(organizationId: string) {
+    return this.businessInventoryService.getDashboardStats(organizationId);
+  }
 }

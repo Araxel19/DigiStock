@@ -31,6 +31,14 @@ export class InventoryController {
     private readonly progressGateway: ProgressGateway,
   ) { }
 
+  @ApiOperation({ summary: 'Get inventory stats' })
+  @Get('stats')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('org_admin', 'supervisor')
+  getDashboardStats(@Req() req) {
+    return this.inventoryService.getDashboardStats(req.user.organizationId);
+  }
+
   @ApiOperation({ summary: 'Create product' })
   @Post('products')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -61,8 +69,8 @@ export class InventoryController {
   @Put('products/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('org_admin', 'supervisor', 'data_entry')
-  updateProduct(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    return this.inventoryService.updateProduct(id, updateProductDto);
+  updateProduct(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto, @Req() req) {
+    return this.inventoryService.updateProduct(id, { ...updateProductDto, organizationId: req.user.organizationId });
   }
 
   @ApiOperation({ summary: 'Delete product' })

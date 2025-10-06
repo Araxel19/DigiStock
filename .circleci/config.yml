@@ -1,0 +1,89 @@
+# CircleCI Configuration for DigiStock
+# Continuous Integration Pipeline
+# Phase 3: Construcción - Automatización del Build y Test del sistema
+version: 2.1
+
+orbs:
+  node: circleci/node@5.0.2
+
+jobs:
+  # 🧱 Job para instalar dependencias y compilar todos los workspaces
+  install_and_build_all:
+    docker:
+      - image: cimg/node:18.16
+    working_directory: ~/project
+    steps:
+      - checkout
+      - node/install-packages:
+          pkg-manager: npm
+          cache-key: "npm-v1-{{ .Branch }}-{{ checksum \"package-lock.json\" }}"
+      - run:
+          name: "Compilar todos los workspaces"
+          command: |
+            npm run build:backend
+            npm run build:business-logic
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - backend/dist
+            - business-logic/dist
+
+  # 🧪 Job opcional para pruebas
+  run_tests:
+    docker:
+      - image: cimg/node:18.16
+    working_directory: ~/project
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: "Ejecutar pruebas si existen"
+          command: |
+            if grep -q "\"test\":" package.json; then
+              npm test
+            else
+              echo "No hay pruebas definidas. Saltando paso..."
+            fi
+
+  # 🐳 Job para construir imágenes Docker (si las tienes)
+  docker_build:
+    docker:
+      - image: cimg/base:stable
+        #auth:
+          #username: $DOCKER_LOGIN
+          #password: $DOCKER_PASSWORD
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - attach_workspace:
+          at: .
+      - run:
+          name: "Construir imagen Docker del backend"
+          command: |
+            if [ -f backend/Dockerfile ]; then
+              docker build -t digistock-backend:ci -f backend/Dockerfile .
+            else
+              echo "No se encontró backend/Dockerfile. Saltando paso..."
+            fi
+      - run:
+          name: "Construir imagen Docker de business-logic"
+          command: |
+            if [ -f business-logic/Dockerfile ]; then
+              docker build -t digistock-logic:ci -f business-logic/Dockerfile .
+            else
+              echo "No se encontró business-logic/Dockerfile. Saltando paso..."
+            fi
+
+workflows:
+  version: 2
+  build_pipeline:
+    jobs:
+      - install_and_build_all
+      - run_tests:
+          requires:
+            - install_and_build_all
+      - docker_build:
+          requires:
+            - install_and_build_all

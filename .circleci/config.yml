@@ -16,7 +16,6 @@ jobs:
       - checkout
       - node/install-packages:
           pkg-manager: npm
-          cache-key: "npm-v1-{{ .Branch }}-{{ checksum \"package-lock.json\" }}"
       - run:
           name: "Compilar todos los workspaces"
           command: |

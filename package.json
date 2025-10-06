@@ -8,7 +8,7 @@
     "business-logic"
   ],
   "scripts": {
-    "build": "npm run build --workspaces",
+    "build": "npm run build --workspace=business-logic && npm run build --workspace=backend",
     "build:backend": "npm run build --workspace=backend",
     "build:business-logic": "npm run build --workspace=business-logic",
     "install:all": "npm install --workspaces"

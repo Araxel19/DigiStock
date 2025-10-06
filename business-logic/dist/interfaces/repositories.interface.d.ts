@@ -8,8 +8,10 @@ export interface IRepository<T> {
     findOne(options: any): Promise<T | null>;
     update(criteria: any, partialEntity: Partial<T>): Promise<any>;
     delete(criteria: any): Promise<any>;
+    softDelete(criteria: any): Promise<any>;
 }
 export interface IOrganizationRepository extends IRepository<Organization> {
+    softDelete(criteria: any): Promise<any>;
 }
 export interface IUserRepository extends IRepository<User> {
 }

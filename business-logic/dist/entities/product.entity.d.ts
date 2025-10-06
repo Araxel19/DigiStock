@@ -9,6 +9,7 @@ export declare class Product {
     name: string;
     description: string;
     price: number;
+    cantidad: number;
     categoryId: string;
     category: Category;
     locationId: string;

@@ -17,13 +17,11 @@ let UserRole = class UserRole {
 };
 exports.UserRole = UserRole;
 __decorate([
-    (0, typeorm_1.PrimaryColumn)(),
-    (0, typeorm_1.Column)({ type: 'uuid', name: 'user_id' }),
+    (0, typeorm_1.PrimaryColumn)({ type: 'uuid', name: 'user_id' }),
     __metadata("design:type", String)
 ], UserRole.prototype, "userId", void 0);
 __decorate([
-    (0, typeorm_1.PrimaryColumn)(),
-    (0, typeorm_1.Column)({ type: 'integer', name: 'role_id' }),
+    (0, typeorm_1.PrimaryColumn)({ type: 'integer', name: 'role_id' }),
     __metadata("design:type", Number)
 ], UserRole.prototype, "roleId", void 0);
 __decorate([

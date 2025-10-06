@@ -3,6 +3,7 @@ export declare class CreateProductDto {
     name: string;
     description?: string;
     price?: number;
+    cantidad?: number;
     organizationId: string;
     categoryId?: string;
     locationId?: string;

@@ -47,6 +47,10 @@ __decorate([
     __metadata("design:type", Number)
 ], Product.prototype, "price", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'integer', default: 0 }),
+    __metadata("design:type", Number)
+], Product.prototype, "cantidad", void 0);
+__decorate([
     (0, typeorm_1.Column)({ type: 'uuid', name: 'category_id', nullable: true }),
     __metadata("design:type", String)
 ], Product.prototype, "categoryId", void 0);

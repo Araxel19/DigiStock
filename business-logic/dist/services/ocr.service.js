@@ -54,8 +54,9 @@ const axios_1 = __importDefault(require("axios"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 let OcrService = class OcrService {
-    constructor(n8nConfig) {
+    constructor(n8nConfig, planillaRepository) {
         this.n8nConfig = n8nConfig;
+        this.planillaRepository = planillaRepository;
         this.httpClient = axios_1.default.create({
             timeout: 60000,
             headers: {
@@ -111,11 +112,21 @@ let OcrService = class OcrService {
             throw new common_1.BadRequestException(`Error conectando con n8n: ${error.message}`);
         }
     }
+    async saveOcrResult(planillaId, inventario) {
+        const planilla = await this.planillaRepository.findOne({ where: { id: planillaId } });
+        if (!planilla) {
+            throw new common_1.NotFoundException(`La planilla con ID ${planillaId} no fue encontrada.`);
+        }
+        planilla.rawOcrData = inventario;
+        planilla.status = 'validacion_pendiente';
+        await this.planillaRepository.save(planilla);
+    }
 };
 exports.OcrService = OcrService;
 exports.OcrService = OcrService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)('IN8nConfig')),
-    __metadata("design:paramtypes", [Object])
+    __param(1, (0, common_1.Inject)('IPlanillaRepository')),
+    __metadata("design:paramtypes", [Object, Object])
 ], OcrService);
 //# sourceMappingURL=ocr.service.js.map

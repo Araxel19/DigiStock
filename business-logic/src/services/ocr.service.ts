@@ -85,6 +85,7 @@ export class OcrService {
   }
 
   async saveOcrResult(planillaId: string, inventario: any[]): Promise<void> {
+    // HACK: Force file change for build cache
     const planilla = await this.planillaRepository.findOne({ where: { id: planillaId } });
 
     if (!planilla) {

@@ -26,7 +26,9 @@ export interface IRepository<T> {
   softDelete(criteria: any): Promise<any>;
 }
 
-export interface IOrganizationRepository extends IRepository<Organization> {}
+export interface IOrganizationRepository extends IRepository<Organization> {
+  softDelete(criteria: any): Promise<any>;
+}
 export interface IUserRepository extends IRepository<User> {}
 export interface IRoleRepository extends IRepository<Role> {}
 export interface IUserRoleRepository extends IRepository<UserRole> {}

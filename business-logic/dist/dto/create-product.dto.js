@@ -30,10 +30,15 @@ __decorate([
     __metadata("design:type", String)
 ], CreateProductDto.prototype, "description", void 0);
 __decorate([
-    (0, class_validator_1.IsDecimal)(),
+    (0, class_validator_1.IsNumber)({ maxDecimalPlaces: 2 }),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
 ], CreateProductDto.prototype, "price", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CreateProductDto.prototype, "cantidad", void 0);
 __decorate([
     (0, class_validator_1.IsUUID)(),
     (0, class_validator_1.IsNotEmpty)(),

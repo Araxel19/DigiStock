@@ -130,6 +130,7 @@ export class InventoryService {
   }
 
   async saveValidatedPlanillaItems(
+    // HACK: Force file change for build cache
     planillaId: string,
     validatedPlanillaDto: ValidatedPlanillaDto,
   ): Promise<Planilla> {
@@ -241,6 +242,7 @@ export class InventoryService {
   }
 
   async getDashboardStats(organizationId: string) {
+    // HACK: Force file change for build cache
     const totalProducts = (await this.productRepository.find({ where: { organizationId } })).length;
 
     const processedPlanillasCount = (await this.planillaRepository.find({

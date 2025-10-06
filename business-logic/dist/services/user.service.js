@@ -54,6 +54,23 @@ let UserService = class UserService {
         this.userRepository = userRepository;
         this.userRoleRepository = userRoleRepository;
     }
+    transformUser(user) {
+        if (!user)
+            return null;
+        const roles = user.userRoles ? user.userRoles.map(ur => ur.role.name) : [];
+        return {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            organizationId: user.organizationId,
+            isSuperAdmin: user.isSuperAdmin,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+            deletedAt: user.deletedAt,
+            roles: roles,
+        };
+    }
     async create(createUserDto) {
         const { email, password, roleIds, ...userData } = createUserDto;
         const existingUser = await this.userRepository.findOne({ where: { email } });
@@ -79,25 +96,27 @@ let UserService = class UserService {
         return user;
     }
     async findAll() {
-        return this.userRepository.find({
+        const users = await this.userRepository.find({
             relations: ['organization', 'userRoles', 'userRoles.role'],
-            select: {
-                password: false,
-            },
         });
+        return users.map(this.transformUser);
+    }
+    async findAllByOrganization(organizationId) {
+        const users = await this.userRepository.find({
+            where: { organizationId },
+            relations: ['organization', 'userRoles', 'userRoles.role'],
+        });
+        return users.map(this.transformUser);
     }
     async findById(id) {
         const user = await this.userRepository.findOne({
             where: { id },
             relations: ['organization', 'userRoles', 'userRoles.role'],
-            select: {
-                password: false,
-            },
         });
         if (!user) {
             throw new common_1.NotFoundException('User not found');
         }
-        return user;
+        return this.transformUser(user);
     }
     async findByEmail(email) {
         return this.userRepository.findOne({
@@ -130,7 +149,7 @@ let UserService = class UserService {
         return this.findById(id);
     }
     async remove(id) {
-        const result = await this.userRepository.delete(id);
+        const result = await this.userRepository.softDelete(id);
         if (result.affected === 0) {
             throw new common_1.NotFoundException('User not found');
         }

@@ -14,6 +14,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ValidatedPlanillaDto = void 0;
 __exportStar(require("./create-user.dto"), exports);
 __exportStar(require("./update-user.dto"), exports);
 __exportStar(require("./login.dto"), exports);
@@ -22,4 +23,7 @@ __exportStar(require("./update-product.dto"), exports);
 __exportStar(require("./create-planilla.dto"), exports);
 __exportStar(require("./update-planilla.dto"), exports);
 __exportStar(require("./ocr-request.dto"), exports);
+__exportStar(require("./create-n8n-planilla.dto"), exports);
+var validated_planilla_item_dto_1 = require("./validated-planilla-item.dto");
+Object.defineProperty(exports, "ValidatedPlanillaDto", { enumerable: true, get: function () { return validated_planilla_item_dto_1.ValidatedPlanillaDto; } });
 //# sourceMappingURL=index.js.map

@@ -1,13 +1,13 @@
 # CircleCI Configuration for DigiStock
-# Continuous Integration Pipeline
-# Phase 3: Construcción - Automatización del Build y Test del sistema
+# CI Pipeline con Build, Tests, Docker y SonarCloud
+
 version: 2.1
 
 orbs:
   node: circleci/node@5.0.2
 
 jobs:
-  # 🧱 Job para instalar dependencias y compilar todos los workspaces
+  # 🧱 Instalar dependencias y compilar todos los workspaces
   install_and_build_all:
     docker:
       - image: cimg/node:18.16
@@ -27,7 +27,7 @@ jobs:
             - backend/dist
             - business-logic/dist
 
-  # 🧪 Job opcional para pruebas
+  # 🧪 Ejecutar pruebas (si existen)
   run_tests:
     docker:
       - image: cimg/node:18.16
@@ -45,19 +45,16 @@ jobs:
               echo "No hay pruebas definidas. Saltando paso..."
             fi
 
-  # 🐳 Job para construir imágenes Docker (si las tienes)
+  # 🐳 Construir imágenes Docker
   docker_build:
     docker:
       - image: cimg/base:stable
-        #auth:
-          #username: $DOCKER_LOGIN
-          #password: $DOCKER_PASSWORD
     steps:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
       - attach_workspace:
-          at: .
+          at: ./
       - run:
           name: "Construir imagen Docker del backend"
           command: |
@@ -75,6 +72,24 @@ jobs:
               echo "No se encontró business-logic/Dockerfile. Saltando paso..."
             fi
 
+  # 🔍 Análisis SonarCloud
+  sonarcloud_analysis:
+    docker:
+      - image: cimg/node:18.16
+    working_directory: ~/project
+    steps:
+      - checkout
+      - node/install-packages:
+          pkg-manager: npm
+      - run:
+          name: "Ejecutar análisis de SonarCloud"
+          command: |
+            npx sonar-scanner \
+              -Dsonar.organization=DigiStock \
+              -Dsonar.projectKey=Araxel19_DigiStock \
+              -Dsonar.login=$SONAR_TOKEN \
+              -Dsonar.host.url=https://sonarcloud.io
+
 workflows:
   version: 2
   build_pipeline:
@@ -84,5 +99,8 @@ workflows:
           requires:
             - install_and_build_all
       - docker_build:
+          requires:
+            - install_and_build_all
+      - sonarcloud_analysis:
           requires:
             - install_and_build_all

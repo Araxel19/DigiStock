@@ -34,6 +34,14 @@
               >
                 Subir Planilla
               </router-link>
+              <router-link
+                v-if="showMyPlanillasLink"
+                to="/my-planillas"
+                class="text-gray-600 hover:text-gray-900 transition-colors"
+                active-class="text-primary-600 font-medium"
+              >
+                Mis Planillas
+              </router-link>
 
               <!-- Links for Super Admins -->
               <router-link

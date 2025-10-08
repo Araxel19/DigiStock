@@ -71,5 +71,10 @@ export const inventoryService = {
   async getStats(): Promise<any> {
     const response = await api.get('/inventory/stats');
     return response.data;
+  },
+
+  async getUserStats() {
+    const response = await api.get('/inventory/dashboard/user');
+    return response.data;
   }
 }

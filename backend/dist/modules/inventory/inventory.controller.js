@@ -30,6 +30,9 @@ let InventoryController = class InventoryController {
     getDashboardStats(req) {
         return this.inventoryService.getDashboardStats(req.user.organizationId);
     }
+    getUserDashboard(req) {
+        return this.inventoryService.getUserDashboardStats(req.user.id);
+    }
     createProduct(createProductDto, req) {
         createProductDto.organizationId = req.user.organizationId;
         return this.inventoryService.createProduct(createProductDto);
@@ -109,6 +112,16 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], InventoryController.prototype, "getDashboardStats", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Get user-specific dashboard stats' }),
+    (0, common_1.Get)('dashboard/user'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('data_entry'),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], InventoryController.prototype, "getUserDashboard", null);
 __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Create product' }),
     (0, common_1.Post)('products'),

@@ -21,7 +21,7 @@ export declare class InventoryService {
     removeCategory(id: string): Promise<void>;
     createPlanilla(createPlanillaDto: CreatePlanillaDto): Promise<Planilla>;
     findAllPlanillas(organizationId: string): Promise<any[]>;
-    findPlanillasByUserId(userId: string): Promise<Planilla[]>;
+    findPlanillasByUserId(userId: string): Promise<any[]>;
     findPlanillaById(id: string): Promise<Planilla>;
     updatePlanilla(id: string, updatePlanillaDto: UpdatePlanillaDto): Promise<Planilla>;
     removePlanilla(id: string): Promise<void>;
@@ -34,6 +34,16 @@ export declare class InventoryService {
         recentActivity: {
             planillas: Planilla[];
             products: Product[];
+        };
+    }>;
+    getUserDashboardStats(userId: string): Promise<{
+        totalProducts: number;
+        processedPlanillas: number;
+        pendingPlanillas: number;
+        ocrSuccessRate: number;
+        recentActivity: {
+            planillas: Planilla[];
+            products: any[];
         };
     }>;
 }

@@ -337,4 +337,44 @@ export class InventoryService {
       },
     };
   }
+
+  async getUserDashboardStats(userId: string) {
+    // Todas las planillas del usuario
+    const planillas = await this.planillaRepository.find({
+      where: { userId },
+      relations: ['items'],
+    });
+
+    const totalPlanillas = planillas.length;
+    const processedPlanillas = planillas.filter(p => p.status === 'procesado').length;
+    const pendingPlanillas = planillas.filter(p => p.status === 'validacion_pendiente').length;
+
+    // Calcular éxito de OCR individual
+    let ocrSuccessRate = 0;
+    const processed = planillas.filter(p => p.status === 'procesado' && p.items.length > 0);
+    if (processed.length > 0) {
+      const rates = processed.map(p => {
+        const matched = p.items.filter(i => i.matchStatus === 'matched').length;
+        return (matched / p.items.length) * 100;
+      });
+      ocrSuccessRate = Math.round(rates.reduce((a, b) => a + b, 0) / rates.length);
+    }
+
+    // Últimas planillas del usuario
+    const recentPlanillas = planillas
+      .filter(p => p.status === 'procesado')
+      .sort((a, b) => new Date(b.processedAt!).getTime() - new Date(a.processedAt!).getTime())
+      .slice(0, 3);
+
+    return {
+      totalProducts: planillas.reduce((acc, p) => acc + (p.items?.length || 0), 0),
+      processedPlanillas,
+      pendingPlanillas,
+      ocrSuccessRate,
+      recentActivity: {
+        planillas: recentPlanillas,
+        products: [],
+      },
+    };
+  }
 }

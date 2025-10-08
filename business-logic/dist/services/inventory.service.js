@@ -96,11 +96,22 @@ let InventoryService = class InventoryService {
         return planillas.map(p => ({ ...p, user: p.user ? { id: p.user.id, firstName: p.user.firstName, lastName: p.user.lastName } : null }));
     }
     async findPlanillasByUserId(userId) {
-        return this.planillaRepository.find({
+        const planillas = await this.planillaRepository.find({
             where: { userId },
             order: { uploadedAt: 'DESC' },
-            relations: ['user'],
+            relations: ['user', 'items', 'items.correctedProduct'],
         });
+        return planillas.map(p => ({
+            ...p,
+            user: p.user
+                ? { id: p.user.id, firstName: p.user.firstName, lastName: p.user.lastName }
+                : null,
+            stats: {
+                added: p.items?.filter(i => i.matchStatus === 'matched').length || 0,
+                updated: p.items?.filter(i => i.matchStatus === 'manual_override').length || 0,
+                unchanged: p.items?.filter(i => i.matchStatus === 'unmatched').length || 0,
+            },
+        }));
     }
     async findPlanillaById(id) {
         const planilla = await this.planillaRepository.findOne({
@@ -252,6 +263,38 @@ let InventoryService = class InventoryService {
             recentActivity: {
                 planillas: recentPlanillas,
                 products: recentProducts,
+            },
+        };
+    }
+    async getUserDashboardStats(userId) {
+        const planillas = await this.planillaRepository.find({
+            where: { userId },
+            relations: ['items'],
+        });
+        const totalPlanillas = planillas.length;
+        const processedPlanillas = planillas.filter(p => p.status === 'procesado').length;
+        const pendingPlanillas = planillas.filter(p => p.status === 'validacion_pendiente').length;
+        let ocrSuccessRate = 0;
+        const processed = planillas.filter(p => p.status === 'procesado' && p.items.length > 0);
+        if (processed.length > 0) {
+            const rates = processed.map(p => {
+                const matched = p.items.filter(i => i.matchStatus === 'matched').length;
+                return (matched / p.items.length) * 100;
+            });
+            ocrSuccessRate = Math.round(rates.reduce((a, b) => a + b, 0) / rates.length);
+        }
+        const recentPlanillas = planillas
+            .filter(p => p.status === 'procesado')
+            .sort((a, b) => new Date(b.processedAt).getTime() - new Date(a.processedAt).getTime())
+            .slice(0, 3);
+        return {
+            totalProducts: planillas.reduce((acc, p) => acc + (p.items?.length || 0), 0),
+            processedPlanillas,
+            pendingPlanillas,
+            ocrSuccessRate,
+            recentActivity: {
+                planillas: recentPlanillas,
+                products: [],
             },
         };
     }

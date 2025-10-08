@@ -70,6 +70,9 @@ let InventoryService = class InventoryService {
     getDashboardStats(organizationId) {
         return this.businessInventoryService.getDashboardStats(organizationId);
     }
+    getUserDashboardStats(userId) {
+        return this.businessInventoryService.getUserDashboardStats(userId);
+    }
 };
 exports.InventoryService = InventoryService;
 exports.InventoryService = InventoryService = __decorate([

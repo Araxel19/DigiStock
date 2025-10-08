@@ -39,6 +39,14 @@ export class InventoryController {
     return this.inventoryService.getDashboardStats(req.user.organizationId);
   }
 
+  @ApiOperation({ summary: 'Get user-specific dashboard stats' })
+  @Get('dashboard/user')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('data_entry')
+  getUserDashboard(@Req() req) {
+    return this.inventoryService.getUserDashboardStats(req.user.id);
+  }
+
   @ApiOperation({ summary: 'Create product' })
   @Post('products')
   @UseGuards(JwtAuthGuard, RolesGuard)

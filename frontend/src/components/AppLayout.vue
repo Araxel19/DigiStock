@@ -130,7 +130,7 @@ const showCategoriesLink = computed(() =>
 );
 
 const showUploadLink = computed(() =>
-  userRoles.value.some((r:any) => ['org_admin', 'supervisor', 'data_entry'].includes(r))
+  userRoles.value.some((r:any) => ['supervisor', 'data_entry'].includes(r))
 )
 
 const showMyPlanillasLink = computed(() =>

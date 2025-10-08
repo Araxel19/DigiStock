@@ -82,4 +82,7 @@ export class InventoryService {
   getDashboardStats(organizationId: string) {
     return this.businessInventoryService.getDashboardStats(organizationId);
   }
+  getUserDashboardStats(userId: string) {
+    return this.businessInventoryService.getUserDashboardStats(userId);
+  }
 }

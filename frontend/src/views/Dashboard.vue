@@ -261,7 +261,7 @@ const canPerformAction = (action: 'Subir Planilla' | 'Ver Inventario' | 'Gestion
   const roles = userRoles.value
   switch (action) {
     case 'Subir Planilla':
-      return roles.includes('org_admin') || roles.includes('supervisor') || roles.includes('data_entry')
+      return roles.includes('supervisor') || roles.includes('data_entry')
     case 'Ver Inventario':
       return roles.includes('org_admin') || roles.includes('supervisor')
     case 'Gestionar Usuarios':
@@ -283,31 +283,47 @@ async function loadSuperAdminData() {
 
 async function loadInventoryData() {
   try {
-    const dashboardStats = await inventoryService.getStats();
-    stats.value = dashboardStats;
+    let dashboardStats
 
+    // Detectar rol del usuario para decidir qué estadísticas cargar
+    if (authStore.user?.roles?.includes('data_entry')) {
+      // Estadísticas personalizadas del usuario data_entry
+      dashboardStats = await inventoryService.getUserStats()
+    } else {
+      // Estadísticas globales para org_admin, supervisor y superadmin
+      dashboardStats = await inventoryService.getStats()
+    }
+
+    stats.value = dashboardStats
+
+    // --- Actividad reciente (planillas + productos) ---
     const recentPlanillas = dashboardStats.recentActivity.planillas.map((p: any) => ({
       id: `p-${p.id}`,
       type: 'planilla',
       title: 'Planilla procesada',
-      description: `${p.fileName}`,
-      time: new Date(p.processedAt!).toLocaleString(),
-    }));
+      description: p.fileName || 'Sin nombre',
+      time: new Date(p.processedAt || p.uploadedAt).toLocaleString(),
+    }))
 
-    const recentProducts = dashboardStats.recentActivity.products.map((p: any) => ({
+    const recentProducts = dashboardStats.recentActivity.products?.map((p: any) => ({
       id: `prod-${p.id}`,
       type: 'product',
       title: 'Nuevo producto agregado',
       description: `${p.code} - ${p.name}`,
       time: new Date(p.createdAt).toLocaleString(),
-    }));
+    })) || []
 
     recentActivity.value = [...recentPlanillas, ...recentProducts]
       .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
-      .slice(0, 5);
+      .slice(0, 5)
 
-    const planillas = await inventoryService.getPlanillas();
-    pendingPlanillas.value = planillas.filter(p => p.status === 'validacion_pendiente');
+    // --- Planillas pendientes (solo si no es data_entry) ---
+    if (!authStore.user?.roles?.includes('data_entry')) {
+      const planillas = await inventoryService.getPlanillas()
+      pendingPlanillas.value = planillas.filter(p => p.status === 'validacion_pendiente')
+    } else {
+      pendingPlanillas.value = []
+    }
 
   } catch (error) {
     console.error('Error loading inventory data:', error)
@@ -320,19 +336,18 @@ async function loadInventoryData() {
 async function loadDashboardData() {
   isLoading.value = true
   try {
+    // Si es superadmin, usar el dashboard general de superadmin
     if (authStore.user?.isSuperAdmin) {
       await loadSuperAdminData()
     } else {
       await loadInventoryData()
     }
   } catch (error) {
-      console.error('Error loading dashboard data:', error)
-  }
-  finally {
+    console.error('Error loading dashboard data:', error)
+  } finally {
     isLoading.value = false
   }
 }
-
 
 onMounted(() => {
   loadDashboardData()

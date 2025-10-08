@@ -16,6 +16,16 @@ export declare class InventoryController {
             products: import("digistock-business-logic").Product[];
         };
     }>;
+    getUserDashboard(req: any): Promise<{
+        totalProducts: number;
+        processedPlanillas: number;
+        pendingPlanillas: number;
+        ocrSuccessRate: number;
+        recentActivity: {
+            planillas: import("digistock-business-logic").Planilla[];
+            products: any[];
+        };
+    }>;
     createProduct(createProductDto: CreateProductDto, req: any): Promise<import("digistock-business-logic").Product>;
     findAllProducts(search: string, req: any): Promise<import("digistock-business-logic").Product[]>;
     findProduct(id: string): Promise<import("digistock-business-logic").Product>;
@@ -28,7 +38,7 @@ export declare class InventoryController {
     removeCategory(id: string): Promise<void>;
     createPlanilla(createPlanillaDto: CreatePlanillaDto, req: any): Promise<import("digistock-business-logic").Planilla>;
     findAllPlanillas(req: any): Promise<any[]>;
-    findMyPlanillas(req: any): Promise<import("digistock-business-logic").Planilla[]>;
+    findMyPlanillas(req: any): Promise<any[]>;
     findPlanilla(id: string): Promise<import("digistock-business-logic").Planilla>;
     updatePlanilla(id: string, updatePlanillaDto: UpdatePlanillaDto): Promise<import("digistock-business-logic").Planilla>;
     removePlanilla(id: string): Promise<void>;

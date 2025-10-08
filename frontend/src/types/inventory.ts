@@ -55,6 +55,11 @@ export interface Planilla {
     firstName: string;
     lastName: string;
   };
+  stats?: {
+    added: number;
+    updated: number;
+    unchanged: number;
+  };
 }
 
 export interface N8nPlanillaItem {

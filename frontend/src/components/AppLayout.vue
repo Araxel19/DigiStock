@@ -122,7 +122,7 @@ const userRoles = computed(() => authStore.user?.roles || [])
 const isSuperAdmin = computed(() => authStore.isSuperAdmin)
 
 const showInventoryLink = computed(() =>
-  userRoles.value.some((r:any) => ['org_admin', 'supervisor', 'data_entry'].includes(r))
+  userRoles.value.some((r:any) => ['org_admin', 'supervisor'].includes(r))
 )
 
 const showCategoriesLink = computed(() =>

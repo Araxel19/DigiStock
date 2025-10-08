@@ -130,12 +130,26 @@ export class InventoryService {
     return planillas.map(p => ({ ...p, user: p.user ? { id: p.user.id, firstName: p.user.firstName, lastName: p.user.lastName } : null }));
   }
 
-  async findPlanillasByUserId(userId: string): Promise<Planilla[]> {
-    return this.planillaRepository.find({
+  async findPlanillasByUserId(userId: string): Promise<any[]> {
+    // Cargar planillas del usuario, incluyendo items y productos corregidos
+    const planillas = await this.planillaRepository.find({
       where: { userId },
       order: { uploadedAt: 'DESC' },
-      relations: ['user'],
+      relations: ['user', 'items', 'items.correctedProduct'],
     });
+
+    // Calcular estadísticas de cada planilla
+    return planillas.map(p => ({
+      ...p,
+      user: p.user
+        ? { id: p.user.id, firstName: p.user.firstName, lastName: p.user.lastName }
+        : null,
+      stats: {
+        added: p.items?.filter(i => i.matchStatus === 'matched').length || 0,
+        updated: p.items?.filter(i => i.matchStatus === 'manual_override').length || 0,
+        unchanged: p.items?.filter(i => i.matchStatus === 'unmatched').length || 0,
+      },
+    }));
   }
 
   async findPlanillaById(id: string): Promise<Planilla> {

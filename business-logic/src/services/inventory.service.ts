@@ -14,6 +14,8 @@ import {
   UpdatePlanillaDto,
   CreateN8nPlanillaDto,
   ValidatedPlanillaDto,
+  CreateCategoryDto,
+  UpdateCategoryDto,
 } from '../dto';
 import {
   IProductRepository,
@@ -80,6 +82,36 @@ export class InventoryService {
     const result = await this.productRepository.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException('Product not found');
+    }
+  }
+
+  // Category methods
+  async createCategory(createCategoryDto: CreateCategoryDto): Promise<Category> {
+    const category = this.categoryRepository.create(createCategoryDto);
+    return this.categoryRepository.save(category);
+  }
+
+  async findAllCategories(organizationId: string): Promise<Category[]> {
+    return this.categoryRepository.find({ where: { organizationId } });
+  }
+
+  async findCategoryById(id: string): Promise<Category> {
+    const category = await this.categoryRepository.findOne({ where: { id } });
+    if (!category) {
+      throw new NotFoundException('Category not found');
+    }
+    return category;
+  }
+
+  async updateCategory(id: string, updateCategoryDto: UpdateCategoryDto): Promise<Category> {
+    await this.categoryRepository.update(id, updateCategoryDto);
+    return this.findCategoryById(id);
+  }
+
+  async removeCategory(id: string): Promise<void> {
+    const result = await this.categoryRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException('Category not found');
     }
   }
 

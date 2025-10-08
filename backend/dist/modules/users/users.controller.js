@@ -16,6 +16,7 @@ exports.UsersController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const users_service_1 = require("./users.service");
+const update_profile_dto_1 = require("./dto/update-profile.dto");
 const create_user_dto_1 = require("./dto/create-user.dto");
 const update_user_dto_1 = require("./dto/update-user.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
@@ -24,6 +25,13 @@ const roles_decorator_1 = require("../../common/decorators/roles.decorator");
 let UsersController = class UsersController {
     constructor(usersService) {
         this.usersService = usersService;
+    }
+    getProfile(req) {
+        return this.usersService.findById(req.user.userId);
+    }
+    updateProfile(req, updateProfileDto) {
+        const { userId } = req.user;
+        return this.usersService.update(userId, updateProfileDto);
     }
     create(createUserDto, req) {
         const user = req.user;
@@ -67,6 +75,23 @@ let UsersController = class UsersController {
     }
 };
 exports.UsersController = UsersController;
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Get current user profile' }),
+    (0, common_1.Get)('me'),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "getProfile", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Update current user profile' }),
+    (0, common_1.Put)('me'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, update_profile_dto_1.UpdateProfileDto]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "updateProfile", null);
 __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Crear nuevo usuario' }),
     (0, common_1.Post)(),

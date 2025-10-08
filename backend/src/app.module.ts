@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
+import { LocationsModule } from './modules/locations/locations.module';
 import { OcrModule } from './modules/ocr/ocr.module';
 import { DatabaseConfig } from './config/database.config';
 import { OrganizationModule } from './modules/organization/organization.module';
@@ -36,11 +37,13 @@ import { join } from 'path';
     AuthModule,
     UsersModule,
     InventoryModule,
+    LocationsModule,
     OcrModule,
     OrganizationModule,
     RolesModule,
     ProgressModule,
     FilesModule,
+
   ],
 })
 export class AppModule {}

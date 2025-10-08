@@ -13,6 +13,7 @@ const typeorm_1 = require("@nestjs/typeorm");
 const auth_module_1 = require("./modules/auth/auth.module");
 const users_module_1 = require("./modules/users/users.module");
 const inventory_module_1 = require("./modules/inventory/inventory.module");
+const locations_module_1 = require("./modules/locations/locations.module");
 const ocr_module_1 = require("./modules/ocr/ocr.module");
 const database_config_1 = require("./config/database.config");
 const organization_module_1 = require("./modules/organization/organization.module");
@@ -48,6 +49,7 @@ exports.AppModule = AppModule = __decorate([
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
             inventory_module_1.InventoryModule,
+            locations_module_1.LocationsModule,
             ocr_module_1.OcrModule,
             organization_module_1.OrganizationModule,
             roles_module_1.RolesModule,

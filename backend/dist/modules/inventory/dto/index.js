@@ -18,4 +18,6 @@ __exportStar(require("./create-product.dto"), exports);
 __exportStar(require("./update-product.dto"), exports);
 __exportStar(require("./create-planilla.dto"), exports);
 __exportStar(require("./update-planilla.dto"), exports);
+__exportStar(require("./create-category.dto"), exports);
+__exportStar(require("./update-category.dto"), exports);
 //# sourceMappingURL=index.js.map

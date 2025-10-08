@@ -46,6 +46,22 @@ let InventoryController = class InventoryController {
     removeProduct(id) {
         return this.inventoryService.removeProduct(id);
     }
+    createCategory(createCategoryDto, req) {
+        createCategoryDto.organizationId = req.user.organizationId;
+        return this.inventoryService.createCategory(createCategoryDto);
+    }
+    findAllCategories(req) {
+        return this.inventoryService.findAllCategories(req.user.organizationId);
+    }
+    findCategory(id) {
+        return this.inventoryService.findCategoryById(id);
+    }
+    updateCategory(id, updateCategoryDto) {
+        return this.inventoryService.updateCategory(id, updateCategoryDto);
+    }
+    removeCategory(id) {
+        return this.inventoryService.removeCategory(id);
+    }
     createPlanilla(createPlanillaDto, req) {
         createPlanillaDto.organizationId = req.user.organizationId;
         createPlanillaDto.userId = req.user.userId;
@@ -57,6 +73,9 @@ let InventoryController = class InventoryController {
             return this.inventoryService.findPlanillasByUserId(user.userId);
         }
         return this.inventoryService.findAllPlanillas(req.user.organizationId);
+    }
+    findMyPlanillas(req) {
+        return this.inventoryService.findPlanillasByUserId(req.user.userId);
     }
     findPlanilla(id) {
         return this.inventoryService.findPlanillaById(id);
@@ -145,6 +164,58 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], InventoryController.prototype, "removeProduct", null);
 __decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Create category' }),
+    (0, common_1.Post)('categories'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('org_admin'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [dto_1.CreateCategoryDto, Object]),
+    __metadata("design:returntype", void 0)
+], InventoryController.prototype, "createCategory", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Get categories' }),
+    (0, common_1.Get)('categories'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('org_admin', 'supervisor', 'data_entry'),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], InventoryController.prototype, "findAllCategories", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Get category by ID' }),
+    (0, common_1.Get)('categories/:id'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('org_admin', 'supervisor'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], InventoryController.prototype, "findCategory", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Update category' }),
+    (0, common_1.Put)('categories/:id'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('org_admin'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, dto_1.UpdateCategoryDto]),
+    __metadata("design:returntype", void 0)
+], InventoryController.prototype, "updateCategory", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Delete category' }),
+    (0, common_1.Delete)('categories/:id'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('org_admin'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], InventoryController.prototype, "removeCategory", null);
+__decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Create planilla' }),
     (0, common_1.Post)('planillas'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
@@ -165,6 +236,16 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], InventoryController.prototype, "findAllPlanillas", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Get my planillas' }),
+    (0, common_1.Get)('planillas/my'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('org_admin', 'supervisor', 'data_entry'),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], InventoryController.prototype, "findMyPlanillas", null);
 __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Get planilla by ID' }),
     (0, common_1.Get)('planillas/:id'),

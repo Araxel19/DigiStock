@@ -18,3 +18,19 @@ export interface LoginResponse {
   access_token: string;
   user: User;
 }
+
+export interface RegisterCredentials {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  organizationName: string;
+}
+export interface RegisterResponse {
+  message: string;
+}
+
+export interface UpdateProfilePayload {
+  firstName?: string;
+  lastName?: string;
+}

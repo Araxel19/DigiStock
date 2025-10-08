@@ -59,6 +59,30 @@ let InventoryService = class InventoryService {
             throw new common_1.NotFoundException('Product not found');
         }
     }
+    async createCategory(createCategoryDto) {
+        const category = this.categoryRepository.create(createCategoryDto);
+        return this.categoryRepository.save(category);
+    }
+    async findAllCategories(organizationId) {
+        return this.categoryRepository.find({ where: { organizationId } });
+    }
+    async findCategoryById(id) {
+        const category = await this.categoryRepository.findOne({ where: { id } });
+        if (!category) {
+            throw new common_1.NotFoundException('Category not found');
+        }
+        return category;
+    }
+    async updateCategory(id, updateCategoryDto) {
+        await this.categoryRepository.update(id, updateCategoryDto);
+        return this.findCategoryById(id);
+    }
+    async removeCategory(id) {
+        const result = await this.categoryRepository.delete(id);
+        if (result.affected === 0) {
+            throw new common_1.NotFoundException('Category not found');
+        }
+    }
     async createPlanilla(createPlanillaDto) {
         const planilla = this.planillaRepository.create(createPlanillaDto);
         return this.planillaRepository.save(planilla);

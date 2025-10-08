@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { InventoryService } from './inventory.service';
-import { CreateProductDto, UpdateProductDto, CreatePlanillaDto, UpdatePlanillaDto } from './dto';
+import { CreateProductDto, UpdateProductDto, CreatePlanillaDto, UpdatePlanillaDto, CreateCategoryDto, UpdateCategoryDto } from './dto';
 import { ValidatedPlanillaDto } from 'digistock-business-logic';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -81,6 +81,48 @@ export class InventoryController {
     return this.inventoryService.removeProduct(id);
   }
 
+  // Category methods
+  @ApiOperation({ summary: 'Create category' })
+  @Post('categories')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('org_admin')
+  createCategory(@Body() createCategoryDto: CreateCategoryDto, @Req() req) {
+    createCategoryDto.organizationId = req.user.organizationId;
+    return this.inventoryService.createCategory(createCategoryDto);
+  }
+
+  @ApiOperation({ summary: 'Get categories' })
+  @Get('categories')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('org_admin', 'supervisor', 'data_entry')
+  findAllCategories(@Req() req) {
+    return this.inventoryService.findAllCategories(req.user.organizationId);
+  }
+
+  @ApiOperation({ summary: 'Get category by ID' })
+  @Get('categories/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('org_admin', 'supervisor')
+  findCategory(@Param('id') id: string) {
+    return this.inventoryService.findCategoryById(id);
+  }
+
+  @ApiOperation({ summary: 'Update category' })
+  @Put('categories/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('org_admin')
+  updateCategory(@Param('id') id: string, @Body() updateCategoryDto: UpdateCategoryDto) {
+    return this.inventoryService.updateCategory(id, updateCategoryDto);
+  }
+
+  @ApiOperation({ summary: 'Delete category' })
+  @Delete('categories/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('org_admin')
+  removeCategory(@Param('id') id: string) {
+    return this.inventoryService.removeCategory(id);
+  }
+
   @ApiOperation({ summary: 'Create planilla' })
   @Post('planillas')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -101,6 +143,14 @@ export class InventoryController {
       return this.inventoryService.findPlanillasByUserId(user.userId);
     }
     return this.inventoryService.findAllPlanillas(req.user.organizationId);
+  }
+
+  @ApiOperation({ summary: 'Get my planillas' })
+  @Get('planillas/my')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('org_admin', 'supervisor', 'data_entry')
+  findMyPlanillas(@Req() req) {
+    return this.inventoryService.findPlanillasByUserId(req.user.userId);
   }
 
   @ApiOperation({ summary: 'Get planilla by ID' })

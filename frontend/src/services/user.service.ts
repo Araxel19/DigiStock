@@ -1,7 +1,15 @@
 import { api } from './api'
-import type { FrontendCreateUserDto, FrontendUpdateUserDto } from '@/types/user'
+import type { FrontendCreateUserDto, FrontendUpdateUserDto, UpdateProfilePayload } from '@/types/user'
 
 export const userService = {
+  async getProfile() {
+    const res = await api.get('/users/me')
+    return res.data
+  },
+  async updateProfile(data: UpdateProfilePayload) {
+    const res = await api.put('/users/me', data)
+    return res.data
+  },
   async getAll() {
     const res = await api.get('/users')
     return res.data

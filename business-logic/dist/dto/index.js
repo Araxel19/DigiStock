@@ -26,4 +26,6 @@ __exportStar(require("./ocr-request.dto"), exports);
 __exportStar(require("./create-n8n-planilla.dto"), exports);
 var validated_planilla_item_dto_1 = require("./validated-planilla-item.dto");
 Object.defineProperty(exports, "ValidatedPlanillaDto", { enumerable: true, get: function () { return validated_planilla_item_dto_1.ValidatedPlanillaDto; } });
+__exportStar(require("./create-category.dto"), exports);
+__exportStar(require("./update-category.dto"), exports);
 //# sourceMappingURL=index.js.map

@@ -1,5 +1,5 @@
-import { Product, Planilla } from '../entities';
-import { CreateProductDto, UpdateProductDto, CreatePlanillaDto, UpdatePlanillaDto, ValidatedPlanillaDto } from '../dto';
+import { Product, Planilla, Category } from '../entities';
+import { CreateProductDto, UpdateProductDto, CreatePlanillaDto, UpdatePlanillaDto, ValidatedPlanillaDto, CreateCategoryDto, UpdateCategoryDto } from '../dto';
 import { IProductRepository, IPlanillaRepository, IPlanillaItemRepository, ICategoryRepository, ILocationRepository, IInventorySnapshotRepository } from '../interfaces/repositories.interface';
 export declare class InventoryService {
     private readonly productRepository;
@@ -14,6 +14,11 @@ export declare class InventoryService {
     findProductById(id: string): Promise<Product>;
     updateProduct(id: string, updateProductDto: UpdateProductDto): Promise<Product>;
     removeProduct(id: string): Promise<void>;
+    createCategory(createCategoryDto: CreateCategoryDto): Promise<Category>;
+    findAllCategories(organizationId: string): Promise<Category[]>;
+    findCategoryById(id: string): Promise<Category>;
+    updateCategory(id: string, updateCategoryDto: UpdateCategoryDto): Promise<Category>;
+    removeCategory(id: string): Promise<void>;
     createPlanilla(createPlanillaDto: CreatePlanillaDto): Promise<Planilla>;
     findAllPlanillas(organizationId: string): Promise<any[]>;
     findPlanillasByUserId(userId: string): Promise<Planilla[]>;

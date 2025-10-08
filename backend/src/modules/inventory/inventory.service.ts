@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InventoryService as BusinessInventoryService, ValidatedPlanillaDto } from 'digistock-business-logic';
-import { CreateProductDto, UpdateProductDto, CreatePlanillaDto, UpdatePlanillaDto} from './dto';
+import { CreateProductDto, UpdateProductDto, CreatePlanillaDto, UpdatePlanillaDto, CreateCategoryDto, UpdateCategoryDto} from './dto';
 
 @Injectable()
 export class InventoryService {
@@ -27,6 +27,27 @@ export class InventoryService {
 
   removeProduct(id: string) {
     return this.businessInventoryService.removeProduct(id);
+  }
+
+  // Category methods
+  createCategory(createCategoryDto: CreateCategoryDto) {
+    return this.businessInventoryService.createCategory(createCategoryDto);
+  }
+
+  findAllCategories(organizationId: string) {
+    return this.businessInventoryService.findAllCategories(organizationId);
+  }
+
+  findCategoryById(id: string) {
+    return this.businessInventoryService.findCategoryById(id);
+  }
+
+  updateCategory(id: string, updateCategoryDto: UpdateCategoryDto) {
+    return this.businessInventoryService.updateCategory(id, updateCategoryDto);
+  }
+
+  removeCategory(id: string) {
+    return this.businessInventoryService.removeCategory(id);
   }
 
   // Planilla methods

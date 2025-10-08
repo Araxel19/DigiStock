@@ -1,5 +1,5 @@
 import { InventoryService as BusinessInventoryService, ValidatedPlanillaDto } from 'digistock-business-logic';
-import { CreateProductDto, UpdateProductDto, CreatePlanillaDto, UpdatePlanillaDto } from './dto';
+import { CreateProductDto, UpdateProductDto, CreatePlanillaDto, UpdatePlanillaDto, CreateCategoryDto, UpdateCategoryDto } from './dto';
 export declare class InventoryService {
     private readonly businessInventoryService;
     constructor(businessInventoryService: BusinessInventoryService);
@@ -8,6 +8,11 @@ export declare class InventoryService {
     findProductById(id: string): Promise<import("digistock-business-logic").Product>;
     updateProduct(id: string, updateProductDto: UpdateProductDto): Promise<import("digistock-business-logic").Product>;
     removeProduct(id: string): Promise<void>;
+    createCategory(createCategoryDto: CreateCategoryDto): Promise<import("digistock-business-logic").Category>;
+    findAllCategories(organizationId: string): Promise<import("digistock-business-logic").Category[]>;
+    findCategoryById(id: string): Promise<import("digistock-business-logic").Category>;
+    updateCategory(id: string, updateCategoryDto: UpdateCategoryDto): Promise<import("digistock-business-logic").Category>;
+    removeCategory(id: string): Promise<void>;
     createPlanilla(createPlanillaDto: CreatePlanillaDto): Promise<import("digistock-business-logic").Planilla>;
     findAllPlanillas(organizationId: string): Promise<any[]>;
     findPlanillasByUserId(userId: string): Promise<import("digistock-business-logic").Planilla[]>;

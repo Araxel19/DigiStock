@@ -8,3 +8,5 @@ export * from './update-planilla.dto';
 export * from './ocr-request.dto';
 export * from './create-n8n-planilla.dto';
 export { ValidatedPlanillaDto } from './validated-planilla-item.dto';
+export * from './create-category.dto';
+export * from './update-category.dto';

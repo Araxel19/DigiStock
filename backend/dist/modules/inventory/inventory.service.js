@@ -31,6 +31,21 @@ let InventoryService = class InventoryService {
     removeProduct(id) {
         return this.businessInventoryService.removeProduct(id);
     }
+    createCategory(createCategoryDto) {
+        return this.businessInventoryService.createCategory(createCategoryDto);
+    }
+    findAllCategories(organizationId) {
+        return this.businessInventoryService.findAllCategories(organizationId);
+    }
+    findCategoryById(id) {
+        return this.businessInventoryService.findCategoryById(id);
+    }
+    updateCategory(id, updateCategoryDto) {
+        return this.businessInventoryService.updateCategory(id, updateCategoryDto);
+    }
+    removeCategory(id) {
+        return this.businessInventoryService.removeCategory(id);
+    }
     createPlanilla(createPlanillaDto) {
         return this.businessInventoryService.createPlanilla(createPlanillaDto);
     }

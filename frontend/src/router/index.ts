@@ -63,10 +63,34 @@ const routes: Array<RouteRecordRaw> = [
     meta: { requiresAuth: true, requiresSuperAdmin: true }
   },
   {
+    path: '/locations',
+    name: 'LocationManagement',
+    component: () => import('@/views/LocationManagement.vue'),
+    meta: { requiresAuth: true, roles: ['org_admin', 'super_admin'] }
+  },
+  {
     path: '/n8n-planilla-review',
     name: 'N8nPlanillaReview',
     component: () => import('@/views/N8nPlanillaReview.vue'),
     meta: { requiresAuth: true, roles: ['org_admin', 'supervisor', 'data_entry'] }
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('@/views/Profile.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/my-planillas',
+    name: 'MyPlanillas',
+    component: () => import('@/views/MyPlanillas.vue'),
+    meta: { requiresAuth: true, roles: ['data_entry'] }
+  },
+  {
+    path: '/categories',
+    name: 'CategoryManagement',
+    component: () => import('@/views/CategoryManagement.vue'),
+    meta: { requiresAuth: true, roles: ['org_admin', 'super_admin'] }
   }
 ]
 

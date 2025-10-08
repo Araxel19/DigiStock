@@ -37,6 +37,11 @@ export const inventoryService = {
     return response.data
   },
 
+  async getMyPlanillas(): Promise<Planilla[]> {
+    const response = await api.get('/inventory/planillas/my')
+    return response.data
+  },
+
   async uploadPlanilla(file: File): Promise<any> {
     const formData = new FormData()
     formData.append('image', file)

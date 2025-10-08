@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -23,6 +24,19 @@ import { Roles } from '../../common/decorators/roles.decorator';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @ApiOperation({ summary: 'Get current user profile' })
+  @Get('me')
+  getProfile(@Req() req) {
+    return this.usersService.findById(req.user.userId);
+  }
+
+  @ApiOperation({ summary: 'Update current user profile' })
+  @Put('me')
+  updateProfile(@Req() req, @Body() updateProfileDto: UpdateProfileDto) {
+    const { userId } = req.user;
+    return this.usersService.update(userId, updateProfileDto);
+  }
 
   @ApiOperation({ summary: 'Crear nuevo usuario' })
   @Post()

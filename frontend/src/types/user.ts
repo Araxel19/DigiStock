@@ -8,3 +8,9 @@ export interface FrontendCreateUserDto {
 }
 
 export interface FrontendUpdateUserDto extends Partial<FrontendCreateUserDto> {}
+
+export interface UpdateProfilePayload {
+  firstName?: string;
+  lastName?: string;
+}
+

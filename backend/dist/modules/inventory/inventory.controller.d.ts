@@ -1,5 +1,5 @@
 import { InventoryService } from './inventory.service';
-import { CreateProductDto, UpdateProductDto, CreatePlanillaDto, UpdatePlanillaDto } from './dto';
+import { CreateProductDto, UpdateProductDto, CreatePlanillaDto, UpdatePlanillaDto, CreateCategoryDto, UpdateCategoryDto } from './dto';
 import { ValidatedPlanillaDto } from 'digistock-business-logic';
 import { ProgressGateway } from '../progress/progress.gateway';
 export declare class InventoryController {
@@ -21,8 +21,14 @@ export declare class InventoryController {
     findProduct(id: string): Promise<import("digistock-business-logic").Product>;
     updateProduct(id: string, updateProductDto: UpdateProductDto, req: any): Promise<import("digistock-business-logic").Product>;
     removeProduct(id: string): Promise<void>;
+    createCategory(createCategoryDto: CreateCategoryDto, req: any): Promise<import("digistock-business-logic").Category>;
+    findAllCategories(req: any): Promise<import("digistock-business-logic").Category[]>;
+    findCategory(id: string): Promise<import("digistock-business-logic").Category>;
+    updateCategory(id: string, updateCategoryDto: UpdateCategoryDto): Promise<import("digistock-business-logic").Category>;
+    removeCategory(id: string): Promise<void>;
     createPlanilla(createPlanillaDto: CreatePlanillaDto, req: any): Promise<import("digistock-business-logic").Planilla>;
     findAllPlanillas(req: any): Promise<any[]>;
+    findMyPlanillas(req: any): Promise<import("digistock-business-logic").Planilla[]>;
     findPlanilla(id: string): Promise<import("digistock-business-logic").Planilla>;
     updatePlanilla(id: string, updatePlanillaDto: UpdatePlanillaDto): Promise<import("digistock-business-logic").Planilla>;
     removePlanilla(id: string): Promise<void>;

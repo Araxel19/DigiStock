@@ -1,0 +1,82 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: digistock_db
+      POSTGRES_USER: digistock_user
+      POSTGRES_PASSWORD: digistock_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    networks:
+      - digistock_network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  backend:
+    image: TU_USUARIO/digistock-backend:latest
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - N8N_WEBHOOK_URL=http://n8n:5678/webhook-test
+    volumes:
+      - ./uploads:/app/uploads
+    networks:
+      - digistock_network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  n8n:
+    image: n8nio/n8n:latest
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=admin123
+      - N8N_WEBHOOK_URL=http://n8n:5678/webhook
+      - GENERIC_TIMEZONE=America/Mexico_City
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n_flows:/home/node/.n8n/workflows
+      - ./uploads:/app/uploads
+    networks:
+      - digistock_network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  frontend:
+    image: TU_USUARIO/digistock-frontend:latest
+    ports:
+      - "8080:80"
+    networks:
+      - digistock_network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+volumes:
+  postgres_data:
+  n8n_data:
+
+networks:
+  digistock_network:
+    driver: overlay

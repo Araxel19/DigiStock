@@ -92,6 +92,3 @@ workflows:
       - sonarcloud_analysis:
           requires:
             - install_and_build_all
-      - deploy_to_swarm:
-          requires:
-            - docker_build

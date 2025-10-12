@@ -15,7 +15,7 @@ FROM nginx:alpine
 # Copiar archivos de build de Vue a nginx
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copiar configuración personalizada de nginx (opcional)
+# Copiar configuración personalizada de nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80

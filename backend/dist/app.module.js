@@ -23,6 +23,8 @@ const progress_module_1 = require("./modules/progress/progress.module");
 const files_module_1 = require("./modules/files/files.module");
 const serve_static_1 = require("@nestjs/serve-static");
 const path_1 = require("path");
+const nestjs_prometheus_1 = require("@willsoto/nestjs-prometheus");
+const metrics_module_1 = require("./metrics/metrics.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -55,6 +57,8 @@ exports.AppModule = AppModule = __decorate([
             roles_module_1.RolesModule,
             progress_module_1.ProgressModule,
             files_module_1.FilesModule,
+            nestjs_prometheus_1.PrometheusModule.register(),
+            metrics_module_1.MetricsModule,
         ],
     })
 ], AppModule);

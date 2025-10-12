@@ -73,4 +73,5 @@ volumes:
 
 networks:
   digistock_network:
+    name: digistock_network
     driver: bridge

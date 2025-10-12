@@ -14,6 +14,8 @@ import { ProgressModule } from './modules/progress/progress.module';
 import { FilesModule } from './modules/files/files.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   imports: [
@@ -43,7 +45,8 @@ import { join } from 'path';
     RolesModule,
     ProgressModule,
     FilesModule,
-
+    PrometheusModule.register(),
+    MetricsModule,
   ],
 })
 export class AppModule {}

@@ -1,0 +1,23 @@
+global:
+  scrape_interval: 10s
+
+scrape_configs:
+  # Monitorea Prometheus mismo
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["prometheus:9090"]
+
+  # Monitorea tus contenedores Docker
+  - job_name: "docker"
+    static_configs:
+      - targets: ["host.docker.internal:9323"]
+
+  # Monitorea tu backend (si tiene endpoint /metrics)
+  - job_name: "backend"
+    static_configs:
+      - targets: ["digistock_backend:3000"]
+
+  # Monitorea cAdvisor
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']

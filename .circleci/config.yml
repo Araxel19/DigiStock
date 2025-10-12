@@ -1,6 +1,4 @@
 # CircleCI Configuration for DigiStock
-# CI Pipeline con Build, Tests, Docker y SonarCloud usando Orb oficial
-
 version: 2.1
 
 orbs:
@@ -46,7 +44,7 @@ jobs:
               echo "No hay pruebas definidas. Saltando paso..."
             fi
 
-  # 🐳 Construir imágenes Docker
+  # 🐳 Construir imágenes Docker y subirlas
   docker_build:
     docker:
       - image: cimg/base:stable
@@ -55,23 +53,46 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
       - attach_workspace:
-          at: ./ 
+          at: ./
       - run:
           name: "Construir imagen Docker del backend"
           command: |
-            if [ -f backend/Dockerfile ]; then
-              docker build -t digistock-backend:ci -f backend/Dockerfile .
-            else
-              echo "No se encontró backend/Dockerfile. Saltando paso..."
-            fi
+            docker build -t araxel119/digistock-backend:latest -f backend/Dockerfile .
       - run:
-          name: "Construir imagen Docker de business-logic"
+          name: "Construir imagen Docker del frontend"
           command: |
-            if [ -f business-logic/Dockerfile ]; then
-              docker build -t digistock-logic:ci -f business-logic/Dockerfile .
-            else
-              echo "No se encontró business-logic/Dockerfile. Saltando paso..."
-            fi
+            docker build -t araxel119/digistock-frontend:latest -f frontend/Dockerfile .
+      - run:
+          name: "Autenticarse en Docker Hub y subir imágenes"
+          command: |
+            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            docker push araxel119/digistock-backend:latest
+            docker push araxel119/digistock-frontend:latest
+
+  # 🚀 Despliegue automático en Swarm
+  deploy_to_swarm:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "YOUR_SSH_KEY_FINGERPRINT"
+      - run:
+          name: "Desplegar stack en Swarm"
+          command: |
+            ssh -o StrictHostKeyChecking=no $SWARM_USER@$SWARM_HOST "
+              export JWT_SECRET='$JWT_SECRET';
+              export DB_USERNAME='$DB_USERNAME';
+              export DB_PASSWORD='$DB_PASSWORD';
+              export DB_NAME='$DB_NAME';
+              export DB_HOST='$DB_HOST';
+              export DB_PORT='$DB_PORT';
+              export DB_SSL='$DB_SSL';
+              export NODE_ENV='$NODE_ENV';
+              export N8N_BASIC_AUTH_USER='$N8N_BASIC_AUTH_USER';
+              export N8N_BASIC_AUTH_PASSWORD='$N8N_BASIC_AUTH_PASSWORD';
+              docker stack deploy --compose-file /home/$SWARM_USER/digistock/docker-stack.yml --with-registry-auth digistock
+            "
 
   # 🔍 Análisis SonarCloud con Orb oficial
   sonarcloud_analysis:
@@ -96,3 +117,6 @@ workflows:
       - sonarcloud_analysis:
           requires:
             - install_and_build_all
+      - deploy_to_swarm:
+          requires:
+            - docker_build

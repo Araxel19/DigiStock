@@ -4,9 +4,9 @@ services:
   postgres:
     image: postgres:15-alpine
     environment:
-      POSTGRES_DB: digistock_db
-      POSTGRES_USER: digistock_user
-      POSTGRES_PASSWORD: digistock_password
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -15,25 +15,53 @@ services:
     networks:
       - digistock_network
     deploy:
-      replicas: 1
+      placement:
+        constraints: [node.role == manager]
       restart_policy:
         condition: on-failure
 
   backend:
-    image: TU_USUARIO/digistock-backend:latest
+    image: araxel119/digistock-backend:latest
     ports:
       - "3000:3000"
-    env_file:
-      - .env
     environment:
-      - NODE_ENV=production
-      - N8N_WEBHOOK_URL=http://n8n:5678/webhook-test
+      # 🌍 Entorno general
+      NODE_ENV: ${NODE_ENV:-production}
+
+      # 🧩 Base de datos
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_SSL: ${DB_SSL:-false}
+
+      # 🔑 JWT
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+
+      # 🌐 n8n
+      N8N_HOST: ${N8N_HOST:-n8n}
+      N8N_WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://n8n:5678/webhook}
+      N8N_PORT: ${N8N_PORT:-5678}
+      GENERIC_TIMEZONE: ${GENERIC_TIMEZONE:-America/Mexico_City}
+
+      # ⚙️ CORS
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://frontend:80}
+
+      # 📂 Subidas de archivos
+      MAX_FILE_SIZE: ${MAX_FILE_SIZE:-10485760}
+      UPLOAD_PATH: ${UPLOAD_PATH:-/app/uploads}
     volumes:
       - ./uploads:/app/uploads
+    depends_on:
+      - postgres
+      - n8n
     networks:
       - digistock_network
     deploy:
-      replicas: 1
+      placement:
+        constraints: [node.role == manager]
       restart_policy:
         condition: on-failure
       resources:
@@ -46,11 +74,12 @@ services:
     ports:
       - "5678:5678"
     environment:
-      - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=admin
-      - N8N_BASIC_AUTH_PASSWORD=admin123
-      - N8N_WEBHOOK_URL=http://n8n:5678/webhook
-      - GENERIC_TIMEZONE=America/Mexico_City
+      N8N_HOST: ${N8N_HOST:-n8n}
+      N8N_BASIC_AUTH_ACTIVE: ${N8N_BASIC_AUTH_ACTIVE:-true}
+      N8N_BASIC_AUTH_USER: ${N8N_BASIC_AUTH_USER:-admin}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_BASIC_AUTH_PASSWORD:-admin123}
+      N8N_WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://n8n:5678/webhook}
+      GENERIC_TIMEZONE: ${GENERIC_TIMEZONE:-America/Mexico_City}
     volumes:
       - n8n_data:/home/node/.n8n
       - ./n8n_flows:/home/node/.n8n/workflows
@@ -58,18 +87,22 @@ services:
     networks:
       - digistock_network
     deploy:
-      replicas: 1
+      placement:
+        constraints: [node.role == manager]
       restart_policy:
         condition: on-failure
 
   frontend:
-    image: TU_USUARIO/digistock-frontend:latest
+    image: araxel119/digistock-frontend:latest
     ports:
       - "8080:80"
+    depends_on:
+      - backend
     networks:
       - digistock_network
     deploy:
-      replicas: 1
+      placement:
+        constraints: [node.role == manager]
       restart_policy:
         condition: on-failure
 

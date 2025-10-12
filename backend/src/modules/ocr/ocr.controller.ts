@@ -13,6 +13,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { diskStorage } from 'multer';
+import { Express } from 'express';
 import { extname } from 'path';
 import { OcrService } from './ocr.service';
 import { InventoryService } from '../inventory/inventory.service';

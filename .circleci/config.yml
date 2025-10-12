@@ -69,31 +69,6 @@ jobs:
             docker push araxel119/digistock-backend:latest
             docker push araxel119/digistock-frontend:latest
 
-  # 🚀 Despliegue automático en Swarm
-  deploy_to_swarm:
-    docker:
-      - image: cimg/base:stable
-    steps:
-      - add_ssh_keys:
-          fingerprints:
-            - "YOUR_SSH_KEY_FINGERPRINT"
-      - run:
-          name: "Desplegar stack en Swarm"
-          command: |
-            ssh -o StrictHostKeyChecking=no $SWARM_USER@$SWARM_HOST "
-              export JWT_SECRET='$JWT_SECRET';
-              export DB_USERNAME='$DB_USERNAME';
-              export DB_PASSWORD='$DB_PASSWORD';
-              export DB_NAME='$DB_NAME';
-              export DB_HOST='$DB_HOST';
-              export DB_PORT='$DB_PORT';
-              export DB_SSL='$DB_SSL';
-              export NODE_ENV='$NODE_ENV';
-              export N8N_BASIC_AUTH_USER='$N8N_BASIC_AUTH_USER';
-              export N8N_BASIC_AUTH_PASSWORD='$N8N_BASIC_AUTH_PASSWORD';
-              docker stack deploy --compose-file /home/$SWARM_USER/digistock/docker-stack.yml --with-registry-auth digistock
-            "
-
   # 🔍 Análisis SonarCloud con Orb oficial
   sonarcloud_analysis:
     docker:

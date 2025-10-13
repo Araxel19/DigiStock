@@ -17,14 +17,12 @@ jobs:
           pkg-manager: npm
       - run:
           name: "Compilar todos los workspaces"
-          command: |
-            npm run build:backend
-            npm run build:business-logic
+          command: npm run build
       - persist_to_workspace:
           root: ~/project
           paths:
-            - backend/dist
             - business-logic/dist
+            - backend/dist
 
   # 🧪 Ejecutar pruebas (si existen)
   run_tests:
@@ -55,15 +53,37 @@ jobs:
       - attach_workspace:
           at: ./
       - run:
+          name: "Cachear dependencias del backend"
+          command: |
+            if [ -d "backend/node_modules" ]; then
+              echo "Dependencias del backend ya cacheadas."
+            else
+              cd backend && npm ci
+            fi
+      - run:
+          name: "Cachear dependencias del frontend"
+          command: |
+            if [ -d "frontend/node_modules" ]; then
+              echo "Dependencias del frontend ya cacheadas."
+            else
+              cd frontend && npm ci
+            fi
+      - run:
           name: "Construir imagen Docker del backend"
           command: |
-            docker build -t araxel119/digistock-backend:latest -f backend/Dockerfile .
+            docker build \
+              --cache-from araxel119/digistock-backend:latest \
+              -t araxel119/digistock-backend:latest \
+              -f backend/Dockerfile .
       - run:
           name: "Construir imagen Docker del frontend"
           command: |
-            docker build -t araxel119/digistock-frontend:latest -f frontend/Dockerfile frontend
+            docker build \
+              --cache-from araxel119/digistock-frontend:latest \
+              -t araxel119/digistock-frontend:latest \
+              -f frontend/Dockerfile frontend
       - run:
-          name: "Autenticarse en Docker Hub y subir imágenes"
+          name: "Autenticarse y subir imágenes"
           command: |
             echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
             docker push araxel119/digistock-backend:latest

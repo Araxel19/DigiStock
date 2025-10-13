@@ -4,8 +4,8 @@
   "description": "DigiStock - Sistema de digitalización de inventario",
   "private": true,
   "workspaces": [
-    "backend",
-    "business-logic"
+    "business-logic",
+    "backend"
   ],
   "scripts": {
     "build": "npm run build --workspace=business-logic && npm run build --workspace=backend",

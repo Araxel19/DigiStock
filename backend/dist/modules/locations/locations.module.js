@@ -11,13 +11,13 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const locations_service_1 = require("./locations.service");
 const locations_controller_1 = require("./locations.controller");
-const location_entity_1 = require("./entities/location.entity");
+const digistock_business_logic_1 = require("digistock-business-logic");
 let LocationsModule = class LocationsModule {
 };
 exports.LocationsModule = LocationsModule;
 exports.LocationsModule = LocationsModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([location_entity_1.Location])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([digistock_business_logic_1.Location])],
         controllers: [locations_controller_1.LocationsController],
         providers: [locations_service_1.LocationsService],
         exports: [locations_service_1.LocationsService],

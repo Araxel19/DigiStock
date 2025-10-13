@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { Location } from './entities/location.entity';
+import { Location } from 'digistock-business-logic';
 import { CreateLocationDto, UpdateLocationDto } from './dto';
 export declare class LocationsService {
     private readonly locationRepository;

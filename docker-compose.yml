@@ -28,6 +28,7 @@ services:
     environment:
       - NODE_ENV=production
       - N8N_WEBHOOK_URL=http://n8n:5678/webhook-test
+      - CORS_ORIGIN=http://localhost:8080,http://digistock_frontend,http://digistock_frontend:80
     depends_on:
       - postgres
       - n8n

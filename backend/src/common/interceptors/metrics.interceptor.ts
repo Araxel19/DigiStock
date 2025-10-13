@@ -1,20 +1,23 @@
-import { CallHandler, ExecutionContext, Inject, Injectable, NestInterceptor } from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { Histogram } from 'prom-client';
-import { HTTP_REQUEST_DURATION_SECONDS } from '../../metrics/metrics.providers';
+import { register, Histogram } from 'prom-client';
 
 @Injectable()
 export class MetricsInterceptor implements NestInterceptor {
-  constructor(
-    @Inject(HTTP_REQUEST_DURATION_SECONDS)
-    private readonly requestDurationHistogram: Histogram<string>,
-  ) {}
-
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
     const response = context.switchToHttp().getResponse();
-    const end = this.requestDurationHistogram.startTimer();
+    let histogram = register.getSingleMetric('http_request_duration_seconds') as Histogram<string>;
+    if (!histogram) {
+      histogram = new Histogram({
+        name: 'http_request_duration_seconds',
+        help: 'Duration of HTTP requests in seconds',
+        labelNames: ['route', 'code', 'method'],
+      });
+      register.registerMetric(histogram);
+    }
+    const end = histogram.startTimer();
 
     return next.handle().pipe(
       tap(() => {

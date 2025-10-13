@@ -72,6 +72,27 @@
             Actualizar
           </button>
         </div>
+        <div class="flex items-center space-x-3">
+          <button
+            @click="exportToExcel"
+            class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+          >
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h16v16H4z"></path>
+            </svg>
+            Exportar Excel
+          </button>
+
+          <button
+            @click="exportToPDF"
+            class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+          >
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Exportar PDF
+          </button>
+        </div>
       </div>
     </div>
 
@@ -270,6 +291,9 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useInventoryStore } from '@/store/inventory'
 import type { Product, Category } from '@/types/inventory'
+import * as XLSX from 'xlsx'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 const route = useRoute()
 const inventoryStore = useInventoryStore()
@@ -424,6 +448,46 @@ function debounce(func: Function, wait: number) {
   }
 }
 
+const exportToExcel = () => {
+  const data = filteredProducts.value.map(p => ({
+    Código: p.code,
+    Nombre: p.name,
+    Descripción: p.description || '',
+    Precio: p.price,
+    Cantidad: p.cantidad,
+    Categoría: p.category?.name || '',
+    Ubicación: p.location?.name || '',
+    'Creado en': formatDate(p.createdAt),
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Inventario');
+
+  XLSX.writeFile(workbook, 'inventario.xlsx');
+};
+
+const exportToPDF = () => {
+  const doc = new jsPDF();
+
+  // Registrar el plugin en la instancia del PDF
+  autoTable(doc, {
+    head: [['Código', 'Nombre', 'Precio', 'Cantidad', 'Categoría', 'Ubicación']],
+    body: filteredProducts.value.map(p => [
+      p.code,
+      p.name,
+      p.price,
+      p.cantidad,
+      p.category?.name || '',
+      p.location?.name || '',
+    ]),
+    styles: { fontSize: 8 },
+  });
+
+  doc.save('inventario.pdf');
+};
+
+
 // Lifecycle
 onMounted(async () => {
   // Check for success message
@@ -442,7 +506,7 @@ onMounted(async () => {
 <style scoped>
 .line-clamp-2 {
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

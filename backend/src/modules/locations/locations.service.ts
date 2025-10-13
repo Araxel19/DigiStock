@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Location } from './entities/location.entity';
+import { Location } from 'digistock-business-logic';
 import { CreateLocationDto, UpdateLocationDto } from './dto';
 
 @Injectable()

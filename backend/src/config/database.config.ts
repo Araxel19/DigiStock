@@ -41,7 +41,7 @@ export class DatabaseConfig implements TypeOrmOptionsFactory {
         User,
         UserRole,
       ],
-      synchronize: process.env.NODE_ENV === 'development', // Be careful with this in production
+      synchronize: process.env.NODE_ENV === 'development',
       logging: process.env.NODE_ENV === 'development',
       ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
     };

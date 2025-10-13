@@ -8,18 +8,13 @@ const helmet_1 = require("helmet");
 const path_1 = require("path");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
+    const corsOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:8080', 'http://frontend:80'];
     app.enableCors({
-        origin: process.env.CORS_ORIGIN || 'http://localhost:8080',
+        origin: corsOrigins,
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
         credentials: true,
     });
-    app.use((0, helmet_1.default)());
-    app.use((req, res, next) => {
-        res.header('Cross-Origin-Resource-Policy', 'cross-origin');
-        res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
-        res.header('Access-Control-Allow-Origin', '*');
-        next();
-    });
+    app.use((0, helmet_1.default)({ crossOriginEmbedderPolicy: false, crossOriginResourcePolicy: { policy: "cross-origin" } }));
     app.useStaticAssets((0, path_1.join)(__dirname, '..', 'app/uploads'), {
         prefix: '/uploads/',
     });

@@ -14,9 +14,10 @@ import { ProgressModule } from './modules/progress/progress.module';
 import { FilesModule } from './modules/files/files.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { MetricsInterceptor } from './common/interceptors/metrics.interceptor';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { MetricsModule } from './metrics/metrics.module';
-import { httpRequestDurationSecondsProvider } from './metrics/metrics.providers';
 
 @Module({
   imports: [
@@ -46,9 +47,18 @@ import { httpRequestDurationSecondsProvider } from './metrics/metrics.providers'
     RolesModule,
     ProgressModule,
     FilesModule,
-    PrometheusModule.register(),
+    PrometheusModule.register({
+      defaultMetrics: {
+        enabled: true,
+      },
+    }),
     MetricsModule,
   ],
-  providers: [httpRequestDurationSecondsProvider],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: MetricsInterceptor,
+    },
+  ],
 })
 export class AppModule {}

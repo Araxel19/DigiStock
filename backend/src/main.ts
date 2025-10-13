@@ -5,29 +5,21 @@ import { AppModule } from './app.module';
 import helmet from 'helmet';
 import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { MetricsInterceptor } from './common/interceptors/metrics.interceptor';
-import { HTTP_REQUEST_DURATION_SECONDS } from './metrics/metrics.providers';
 
 async function bootstrap() {
   // Usamos NestExpressApplication para servir archivos estáticos
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // --- CORS ---
+  const corsOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:8080', 'http://frontend:80'];
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:8080', // frontend Vue
+    origin: corsOrigins,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
 
   // --- Seguridad ---
-  app.use(helmet());
-
-  app.use((req, res, next) => {
-    res.header('Cross-Origin-Resource-Policy', 'cross-origin');
-    res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
-    res.header('Access-Control-Allow-Origin', '*');
-    next();
-  });
+  app.use(helmet({ crossOriginEmbedderPolicy: false, crossOriginResourcePolicy: { policy: "cross-origin" } }));
 
   // --- Servir archivos estáticos ---
   // Esto permite acceder a las imágenes subidas (ej: /uploads/planillas/archivo.png)
@@ -43,10 +35,6 @@ async function bootstrap() {
       transform: true,            // Convierte los tipos automáticamente
     }),
   );
-
-  // --- Métricas ---
-  const histogram = app.get(HTTP_REQUEST_DURATION_SECONDS);
-  app.useGlobalInterceptors(new MetricsInterceptor(histogram));
 
   // --- Prefijo global ---
   app.setGlobalPrefix('api/v1');

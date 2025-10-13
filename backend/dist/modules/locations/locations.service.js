@@ -16,7 +16,7 @@ exports.LocationsService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
-const location_entity_1 = require("./entities/location.entity");
+const digistock_business_logic_1 = require("digistock-business-logic");
 let LocationsService = class LocationsService {
     constructor(locationRepository) {
         this.locationRepository = locationRepository;
@@ -50,7 +50,7 @@ let LocationsService = class LocationsService {
 exports.LocationsService = LocationsService;
 exports.LocationsService = LocationsService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(location_entity_1.Location)),
+    __param(0, (0, typeorm_1.InjectRepository)(digistock_business_logic_1.Location)),
     __metadata("design:paramtypes", [typeorm_2.Repository])
 ], LocationsService);
 //# sourceMappingURL=locations.service.js.map

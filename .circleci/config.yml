@@ -45,7 +45,7 @@ jobs:
   # 🐳 Construir imágenes Docker y subirlas
   docker_build:
     docker:
-      - image: cimg/base:stable
+      - image: cimg/node:18.16
     steps:
       - checkout
       - setup_remote_docker:

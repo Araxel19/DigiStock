@@ -5,6 +5,8 @@ import { AppModule } from './app.module';
 import helmet from 'helmet';
 import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { MetricsInterceptor } from './common/interceptors/metrics.interceptor';
+import { HTTP_REQUEST_DURATION_SECONDS } from './metrics/metrics.providers';
 
 async function bootstrap() {
   // Usamos NestExpressApplication para servir archivos estáticos
@@ -41,6 +43,10 @@ async function bootstrap() {
       transform: true,            // Convierte los tipos automáticamente
     }),
   );
+
+  // --- Métricas ---
+  const histogram = app.get(HTTP_REQUEST_DURATION_SECONDS);
+  app.useGlobalInterceptors(new MetricsInterceptor(histogram));
 
   // --- Prefijo global ---
   app.setGlobalPrefix('api/v1');

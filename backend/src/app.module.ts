@@ -16,6 +16,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { MetricsModule } from './metrics/metrics.module';
+import { httpRequestDurationSecondsProvider } from './metrics/metrics.providers';
 
 @Module({
   imports: [
@@ -48,5 +49,6 @@ import { MetricsModule } from './metrics/metrics.module';
     PrometheusModule.register(),
     MetricsModule,
   ],
+  providers: [httpRequestDurationSecondsProvider],
 })
 export class AppModule {}

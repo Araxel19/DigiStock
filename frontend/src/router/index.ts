@@ -69,12 +69,6 @@ const routes: Array<RouteRecordRaw> = [
     meta: { requiresAuth: true, roles: ['org_admin', 'super_admin'] }
   },
   {
-    path: '/n8n-planilla-review',
-    name: 'N8nPlanillaReview',
-    component: () => import('@/views/N8nPlanillaReview.vue'),
-    meta: { requiresAuth: true, roles: ['org_admin', 'supervisor', 'data_entry'] }
-  },
-  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/Profile.vue'),

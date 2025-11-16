@@ -1,11 +1,11 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Navigation -->
-    <nav class="bg-white shadow-sm border-b">
+    <nav class="bg-gradient-to-r from-slate-900 via-[#0f2f55] to-slate-900">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
           <div class="flex items-center space-x-8">
-            <router-link to="/dashboard" class="text-xl font-semibold text-gray-900">
+            <router-link to="/dashboard" class="text-xl font-semibold text-cyan-400">
               DigiStock
             </router-link>
             <nav class="hidden md:flex space-x-8">
@@ -106,7 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/store/auth'
 import { useRouter } from 'vue-router'
 
@@ -118,6 +118,29 @@ const toggleDropdown = () => {
   isDropdownOpen.value = !isDropdownOpen.value
 }
 
+// Cerrar dropdown al hacer clic fuera
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+  const nav = document.querySelector('nav')
+  if (nav && !nav.contains(target)) {
+    isDropdownOpen.value = false
+  }
+}
+
+// Cerrar dropdown al cambiar de página
+const closeDropdown = () => {
+  isDropdownOpen.value = false
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+  router.afterEach(closeDropdown)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+
 const userRoles = computed(() => authStore.user?.roles || [])
 const isSuperAdmin = computed(() => authStore.isSuperAdmin)
 
@@ -126,7 +149,7 @@ const showInventoryLink = computed(() =>
 )
 
 const showCategoriesLink = computed(() =>
-  isSuperAdmin.value || userRoles.value.includes('org_admin')
+  !isSuperAdmin.value && userRoles.value.includes('org_admin')
 );
 
 const showUploadLink = computed(() =>
@@ -142,7 +165,7 @@ const showUsersLink = computed(() =>
   isSuperAdmin.value || userRoles.value.includes('org_admin')
 )
 const showLocationsLink = computed(() =>
-  isSuperAdmin.value || userRoles.value.includes('org_admin')
+  !isSuperAdmin.value && userRoles.value.includes('org_admin')
 )
 
 const logoutAndRedirect = () => {

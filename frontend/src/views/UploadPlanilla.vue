@@ -273,6 +273,7 @@
 <script setup lang="ts">
 import { ref, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useToastStore } from '@/composables/useToast';
 import { inventoryService } from '@/services/inventory.service';
 import { io, Socket } from 'socket.io-client';
 
@@ -360,6 +361,8 @@ const processFile = async () => {
     errorMessage.value = error.message || 'Error al procesar la planilla';
     addProcessingStep('Error en procesamiento', error.message, 'error');
     isProcessing.value = false;
+    const { error: showError } = useToastStore();
+    showError('Error al procesar planilla');
   }
 };
 

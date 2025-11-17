@@ -288,6 +288,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useToastStore } from '@/composables/useToast';
 import { inventoryService } from '@/services/inventory.service';
 import type { Planilla } from '@/types/inventory';
 
@@ -384,6 +385,8 @@ onMounted(async () => {
     }
   } catch (error) {
     console.error('Error fetching planilla:', error);
+    const { error: showError } = useToastStore();
+    showError('Error al cargar planilla');
     planilla.value = null;
   } finally {
     isLoading.value = false;
@@ -399,7 +402,8 @@ const confirmAndSave = async () => {
     router.push({ name: 'InventoryList', query: { success: 'Planilla validada y guardada exitosamente' } });
   } catch (error) {
     console.error('Error confirming planilla data:', error);
-    alert('Error al guardar los datos. Por favor, intenta nuevamente.');
+    const { error: showError } = useToastStore();
+    showError('Error al guardar planilla');
   } finally {
     isSaving.value = false;
   }

@@ -73,6 +73,13 @@ export const inventoryService = {
     return response.data;
   },
 
+  async getInventoryCost(orgId?: string): Promise<{ total: number }> {
+    const params: any = {}
+    if (orgId) params.orgId = orgId
+    const response = await api.get('/inventory/stats/cost', { params })
+    return response.data
+  },
+
   async getUserStats() {
     const response = await api.get('/inventory/dashboard/user');
     return response.data;

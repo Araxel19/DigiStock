@@ -52,6 +52,14 @@
               >
                 Organizaciones
               </router-link>
+              <router-link
+                v-if="showOrganizationsLink"
+                to="/analytics/orgs"
+                class="text-gray-600 hover:text-gray-900 transition-colors"
+                active-class="text-primary-600 font-medium"
+              >
+                Análisis Org
+              </router-link>
 
               <!-- Links for Admins -->
               <router-link
@@ -103,12 +111,14 @@
       <router-view />
     </main>
   </div>
+  <ToastContainer />
 </template>
 
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/store/auth'
 import { useRouter } from 'vue-router'
+import ToastContainer from '@/components/ToastContainer.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()

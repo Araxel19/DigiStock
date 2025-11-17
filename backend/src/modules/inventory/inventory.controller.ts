@@ -5,7 +5,6 @@ import {
   Body,
   Param,
   Query,
-  Patch,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -37,6 +36,16 @@ export class InventoryController {
   @Roles('org_admin', 'supervisor')
   getDashboardStats(@Req() req) {
     return this.inventoryService.getDashboardStats(req.user.organizationId);
+  }
+
+  @ApiOperation({ summary: 'Get total inventory cost' })
+  @Get('stats/cost')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('org_admin', 'supervisor', 'data_entry')
+  getInventoryCost(@Req() req, @Query('orgId') orgId?: string) {
+    // Only superadmin can request arbitrary orgId
+    const targetOrg = req.user?.isSuperAdmin ? orgId : req.user.organizationId;
+    return this.inventoryService.getInventoryCost(targetOrg);
   }
 
   @ApiOperation({ summary: 'Get user-specific dashboard stats' })

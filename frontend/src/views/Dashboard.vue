@@ -75,6 +75,82 @@
               <span>Usuarios registrados</span>
             </div>
           </div>
+
+          <div class="bg-slate-800/50 backdrop-blur-xl p-6 rounded-xl border border-indigo-500/20 shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/30 transition-all">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-indigo-300/70 mb-1">Costo Total Inventario</p>
+                <p class="text-2xl font-bold text-white">{{ formatCurrency(superAdminStats.inventoryCost) }}</p>
+              </div>
+              <div class="p-3 rounded-lg bg-gradient-to-br from-indigo-500/20 to-blue-500/20 border border-indigo-500/30">
+                <svg class="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2v4h6v-4c0-1.105-1.343-2-3-2z"/>
+                </svg>
+              </div>
+            </div>
+            <div class="mt-4 text-xs text-cyan-300/70">Valor estimado en base a precio * cantidad</div>
+          </div>
+          <div class="bg-slate-800/50 backdrop-blur-xl p-6 rounded-xl border border-emerald-500/20 shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/30 transition-all">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="flex items-center space-x-2">
+                  <p class="text-sm font-medium text-emerald-300/70 mb-1">Rotación Inventario (30d)</p>
+                  <button type="button" @click="showTurnoverHelp = true" class="text-cyan-300/60 hover:text-cyan-200 text-xs" title="Ayuda">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"/></svg>
+                  </button>
+                </div>
+                <p class="text-2xl font-bold text-white">{{ formatTurnover(superAdminStats.turnover) }}</p>
+                <div class="mt-2 flex items-center space-x-2">
+                  <select v-model="selectedTurnoverRange" @change="reloadTurnover" class="bg-slate-700 text-sm text-white px-2 py-1 rounded border border-slate-600">
+                    <option value="7d">7d</option>
+                    <option value="30d">30d</option>
+                    <option value="90d">90d</option>
+                  </select>
+                  <span v-if="isTurnoverLoading" class="text-xs text-cyan-300">Cargando...</span>
+                </div>
+              </div>
+              <div class="p-3 rounded-lg bg-gradient-to-br from-emerald-500/20 to-lime-500/20 border border-emerald-500/30">
+                <svg class="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h4l3-8 4 16 3-6h4" />
+                </svg>
+              </div>
+            </div>
+            <div class="mt-4 text-xs" :class="turnoverClass(superAdminStats.turnover)">{{ turnoverText(superAdminStats.turnover) }}</div>
+          </div>
+        </div>
+
+        <!-- Usage Metrics (Super Admin) -->
+        <div class="mb-8">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
+            <div class="bg-slate-800/50 backdrop-blur-xl p-6 rounded-xl border border-cyan-500/20 shadow-lg">
+              <p class="text-sm text-cyan-300/70">DAU (último día)</p>
+              <p class="text-2xl font-bold text-white">{{ dau }}</p>
+            </div>
+
+            <div class="bg-slate-800/50 backdrop-blur-xl p-6 rounded-xl border border-cyan-500/20 shadow-lg">
+              <p class="text-sm text-cyan-300/70">MAU (últimos 30 días)</p>
+              <p class="text-2xl font-bold text-white">{{ mau }}</p>
+            </div>
+
+            <div class="bg-slate-800/50 backdrop-blur-xl p-6 rounded-xl border border-cyan-500/20 shadow-lg">
+              <p class="text-sm text-cyan-300/70">Almacenamiento (MB)</p>
+              <p class="text-2xl font-bold text-white">{{ (storageBytes / (1024*1024)).toFixed(2) }}</p>
+            </div>
+
+            <div class="bg-slate-800/50 backdrop-blur-xl p-6 rounded-xl border border-cyan-500/20 shadow-lg">
+              <p class="text-sm text-cyan-300/70">Planillas / día (últimos {{ selectedTurnoverRange }})</p>
+              <div class="mt-3 h-12 flex items-end space-x-1">
+                <div v-for="(v, idx) in planillasPerDay" :key="idx" class="flex-1 bg-gradient-to-t from-cyan-500/50 to-cyan-500/20 rounded-t" :style="{height: barHeight(v, planillasPerDay)}"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-slate-800/50 backdrop-blur-xl p-4 rounded-xl border border-cyan-500/20 shadow-lg">
+            <p class="text-sm text-cyan-300/70 mb-2">Llamadas API / día</p>
+            <div class="h-20 flex items-end space-x-1">
+              <div v-for="(v, idx) in apiCallsPerDay" :key="idx" class="flex-1 bg-gradient-to-t from-sky-500/40 to-sky-500/10 rounded-t" :style="{height: barHeight(v, apiCallsPerDay)}"></div>
+            </div>
+          </div>
         </div>
 
         <!-- Quick Actions -->
@@ -120,6 +196,16 @@
               </svg>
             </div>
           </router-link>
+        </div>
+        <!-- Trends Chart (Super Admin) -->
+        <div class="mb-8">
+          <div class="bg-slate-800/50 backdrop-blur-xl p-6 rounded-xl border border-cyan-500/20 shadow-lg">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-bold text-white">Gráficos de Tendencia</h3>
+              <p class="text-sm text-cyan-300/70">Ventas, inventario y movimientos</p>
+            </div>
+            <TrendsChart />
+          </div>
         </div>
       </div>
 
@@ -274,6 +360,47 @@
           </router-link>
         </div>
 
+        <!-- Trends Chart (Organization) -->
+        <div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-slate-800/50 backdrop-blur-xl p-4 rounded-xl border border-cyan-500/20 shadow-sm">
+            <div>
+              <p class="text-sm text-cyan-300/70">Costo Total Inventario</p>
+              <p class="text-lg font-bold text-white">{{ formatCurrency(stats.inventoryCost) }}</p>
+            </div>
+            <div class="text-xs text-cyan-300/60 mt-2">Estimado: price * cantidad</div>
+          </div>
+
+          <div class="bg-slate-800/50 backdrop-blur-xl p-4 rounded-xl border border-emerald-500/20 shadow-sm">
+            <div>
+              <div class="flex items-center space-x-2">
+                <p class="text-sm text-emerald-300/70">Rotación Inventario (30d)</p>
+                <button type="button" @click="showTurnoverHelp = true" class="text-cyan-300/60 hover:text-cyan-200 text-xs" title="Ayuda">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"/></svg>
+                </button>
+              </div>
+              <p class="text-lg font-bold text-white">{{ formatTurnover(stats.turnover) }}</p>
+              <div class="mt-2 flex items-center space-x-2">
+                <select v-model="selectedTurnoverRange" @change="reloadTurnover" class="bg-slate-700 text-sm text-white px-2 py-1 rounded border border-slate-600">
+                  <option value="7d">7d</option>
+                  <option value="30d">30d</option>
+                  <option value="90d">90d</option>
+                </select>
+                <span v-if="isTurnoverLoading" class="text-xs text-cyan-300">Cargando...</span>
+              </div>
+            </div>
+            <div class="text-xs mt-2" :class="turnoverClass(stats.turnover)">{{ turnoverText(stats.turnover) }}</div>
+          </div>
+        </div>
+        <div class="mb-8">
+          <div class="bg-slate-800/50 backdrop-blur-xl p-6 rounded-xl border border-cyan-500/20 shadow-lg">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-bold text-white">Gráficos de Tendencia</h3>
+              <p class="text-sm text-cyan-300/70">Ventas, inventario y movimientos</p>
+            </div>
+            <TrendsChart :orgId="authStore.user?.organizationId" />
+          </div>
+        </div>
+
         <!-- Planillas Pendientes Table -->
         <div v-if="pendingPlanillas.length > 0" class="bg-slate-800/50 backdrop-blur-xl rounded-xl border border-cyan-500/20 shadow-lg mb-8">
           <div class="p-6 border-b border-cyan-500/20">
@@ -369,23 +496,51 @@
       </div>
     </div>
   </div>
+  <!-- Turnover help modal -->
+  <div v-if="showTurnoverHelp" class="fixed inset-0 z-60 flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/60" @click="closeTurnoverHelp"></div>
+    <div class="relative bg-slate-800/90 max-w-lg w-full mx-4 rounded-lg p-6 border border-cyan-500/20 shadow-lg">
+      <div class="flex items-start justify-between">
+        <div>
+          <h3 class="text-lg font-bold text-white">Rotación de Inventario</h3>
+          <p class="text-sm text-cyan-300/70 mt-2">La rotación se calcula como <strong>ventas totales / inventario promedio</strong> en el periodo seleccionado. Indica cuántas veces, en promedio, se renovó el inventario.</p>
+          <ul class="text-sm text-cyan-300/70 mt-3 list-disc list-inside space-y-1">
+            <li><strong>Ventas totales:</strong> suma de cantidades procesadas en planillas.</li>
+            <li><strong>Inventario promedio:</strong> promedio diario del stock registrado en snapshots.</li>
+            <li>Interpretación: valores bajos (ej. &lt; 0.5) indican rotación lenta; valores altos (&gt; 2) indican rotación rápida.</li>
+          </ul>
+        </div>
+        <button @click="closeTurnoverHelp" class="text-cyan-300 hover:text-white ml-4">Cerrar</button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/store/auth'
+import { useToastStore } from '@/composables/useToast'
 import { inventoryService } from '@/services/inventory.service'
 import { organizationService } from '@/services/organization.service'
 import { userService } from '@/services/user.service'
+import { analyticsService } from '@/services/analytics.service'
 import { Planilla } from '@/types/inventory'
+import TrendsChart from '@/components/TrendsChart.vue'
 
 const authStore = useAuthStore()
 const isLoading = ref(true)
+
+// Turnover range control
+const selectedTurnoverRange = ref<'7d' | '30d' | '90d'>('30d')
+const isTurnoverLoading = ref(false)
+const showTurnoverHelp = ref(false)
 
 // Stats for Super Admin
 const superAdminStats = ref({
   totalOrganizations: 0,
   totalUsers: 0,
+  inventoryCost: 0,
+  turnover: 0,
 })
 
 // Stats for Organization Users
@@ -394,10 +549,21 @@ const stats = ref({
   processedPlanillas: 0,
   pendingPlanillas: 0,
   ocrSuccessRate: 0,
+  inventoryCost: 0,
+  turnover: 0,
 })
 
 const recentActivity = ref<any[]>([])
 const pendingPlanillas = ref<Planilla[]>([])
+
+// Usage metrics (superadmin)
+const usageLabels = ref<string[]>([])
+const planillasPerDay = ref<number[]>([])
+const apiCallsPerDay = ref<number[]>([])
+const dau = ref(0)
+const mau = ref(0)
+const storageBytes = ref(0)
+const isUsageLoading = ref(false)
 
 const userRoles = computed(() => authStore.user?.roles || [])
 
@@ -427,8 +593,33 @@ async function loadSuperAdminData() {
     
     const users = await userService.getAll()
     superAdminStats.value.totalUsers = users.length
+    // Inventory cost (global)
+    try {
+      const costRes = await inventoryService.getInventoryCost()
+      superAdminStats.value.inventoryCost = costRes.total || 0
+    } catch (err) {
+      console.warn('Error fetching inventory cost for superadmin', err)
+      superAdminStats.value.inventoryCost = 0
+    }
+
+    // Turnover (global, using selected range)
+    try {
+      await reloadTurnover()
+    } catch (err) {
+      console.warn('Error fetching turnover for superadmin', err)
+      superAdminStats.value.turnover = 0
+    }
+
+    // Usage metrics
+    try {
+      await reloadUsage()
+    } catch (err) {
+      console.warn('Error fetching usage metrics', err)
+    }
   } catch (error) {
     console.error("Error fetching data:", error)
+    const { error: showError } = useToastStore()
+    showError('Error al cargar datos del sistema')
   }
   recentActivity.value = []
 }
@@ -447,6 +638,23 @@ async function loadInventoryData() {
     }
 
     stats.value = dashboardStats
+
+    // inventory cost for organization
+    try {
+      const costRes = await inventoryService.getInventoryCost(authStore.user?.organizationId)
+      stats.value.inventoryCost = costRes.total || 0
+    } catch (err) {
+      console.warn('Error fetching inventory cost for org', err)
+      stats.value.inventoryCost = 0
+    }
+
+    // turnover (rotación) - usar rango seleccionado
+    try {
+      await reloadTurnover()
+    } catch (err) {
+      console.warn('Error fetching turnover for org', err)
+      stats.value.turnover = 0
+    }
 
     // --- Actividad reciente (planillas + productos) ---
     const recentPlanillas = dashboardStats.recentActivity.planillas.map((p: any) => ({
@@ -470,16 +678,18 @@ async function loadInventoryData() {
       .slice(0, 5)
 
     // --- Planillas pendientes (solo si no es data_entry) ---
-    if (!authStore.user?.roles?.includes('data_entry')) {
+    if (authStore.user?.roles?.includes('data_entry')) {
+      pendingPlanillas.value = []
+    } else {
       const planillas = await inventoryService.getPlanillas()
       pendingPlanillas.value = planillas.filter(p => p.status === 'validacion_pendiente')
-    } else {
-      pendingPlanillas.value = []
     }
 
   } catch (error) {
     console.error('Error loading inventory data:', error)
-    stats.value = { totalProducts: 0, processedPlanillas: 0, pendingPlanillas: 0, ocrSuccessRate: 0 }
+    const { error: showError } = useToastStore()
+    showError('Error al cargar datos de inventario')
+    stats.value = { totalProducts: 0, processedPlanillas: 0, pendingPlanillas: 0, ocrSuccessRate: 0, inventoryCost: 0, turnover: 0 }
     recentActivity.value = []
     pendingPlanillas.value = []
   }
@@ -496,6 +706,8 @@ async function loadDashboardData() {
     }
   } catch (error) {
     console.error('Error loading dashboard data:', error)
+    const { error: showError } = useToastStore()
+    showError('Error al cargar datos del dashboard')
   } finally {
     isLoading.value = false
   }
@@ -504,4 +716,77 @@ async function loadDashboardData() {
 onMounted(() => {
   loadDashboardData()
 })
+
+const formatCurrency = (value: number) => {
+  const v = Number(value || 0)
+  return `$${new Intl.NumberFormat('es-ES').format(Math.round(v))}`
+}
+
+async function reloadTurnover() {
+  
+  isTurnoverLoading.value = true
+  try {
+    if (authStore.user?.isSuperAdmin) {
+      const t = await analyticsService.getTurnover(undefined, selectedTurnoverRange.value)
+      superAdminStats.value.turnover = Number(t.turnover || 0)
+    } else {
+      const t = await analyticsService.getTurnover(authStore.user?.organizationId, selectedTurnoverRange.value)
+      stats.value.turnover = Number(t.turnover || 0)
+    }
+  } catch (err) {
+    console.warn('Error reloading turnover', err)
+  } finally {
+    isTurnoverLoading.value = false
+  }
+}
+
+// Close help on backdrop click
+function closeTurnoverHelp() {
+  showTurnoverHelp.value = false
+}
+
+async function reloadUsage() {
+  isUsageLoading.value = true
+  try {
+    const res = await analyticsService.getUsage(undefined, selectedTurnoverRange.value)
+    usageLabels.value = res.labels || []
+    planillasPerDay.value = res.planillasPerDay || []
+    apiCallsPerDay.value = res.apiCallsPerDay || []
+    dau.value = Number(res.dau || 0)
+    mau.value = Number(res.mau || 0)
+    storageBytes.value = Number(res.storageBytes || 0)
+  } catch (e) {
+    console.warn('Failed to fetch usage', e)
+  } finally {
+    isUsageLoading.value = false
+  }
+}
+
+const formatTurnover = (value: number) => {
+  const v = Number(value || 0)
+  if (!v || Number.isNaN(v)) return '0.00x'
+  return `${v.toFixed(2)}x`
+}
+
+const turnoverText = (value: number) => {
+  const v = Number(value || 0)
+  if (!v || Number.isNaN(v)) return 'Sin datos'
+  if (v < 0.5) return 'Baja'
+  if (v < 2) return 'Moderada'
+  return 'Alta'
+}
+
+const turnoverClass = (value: number) => {
+  const v = Number(value || 0)
+  if (!v || Number.isNaN(v)) return 'text-slate-400'
+  if (v < 0.5) return 'text-yellow-400'
+  if (v < 2) return 'text-cyan-300/70'
+  return 'text-green-400'
+}
+
+const barHeight = (value: number, series: number[]) => {
+  const max = Math.max(...(series || [1]), 1)
+  const h = Math.round((value / max) * 40)
+  return `${h}px`
+}
 </script>

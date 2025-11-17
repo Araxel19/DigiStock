@@ -10,6 +10,7 @@ import { DatabaseConfig } from './config/database.config';
 import { OrganizationModule } from './modules/organization/organization.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { BusinessLogicModule } from './business-logic/business-logic.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ProgressModule } from './modules/progress/progress.module';
 import { FilesModule } from './modules/files/files.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
@@ -47,6 +48,8 @@ import { MetricsModule } from './metrics/metrics.module';
     RolesModule,
     ProgressModule,
     FilesModule,
+    // Analytics module provides trends and reporting endpoints
+    AnalyticsModule,
     PrometheusModule.register({
       defaultMetrics: {
         enabled: true,

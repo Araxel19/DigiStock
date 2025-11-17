@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InventoryService as BusinessInventoryService, ValidatedPlanillaDto } from 'digistock-business-logic';
+import { DataSource } from 'typeorm';
 import { CreateProductDto, UpdateProductDto, CreatePlanillaDto, UpdatePlanillaDto, CreateCategoryDto, UpdateCategoryDto} from './dto';
 
 @Injectable()
 export class InventoryService {
   constructor(
     private readonly businessInventoryService: BusinessInventoryService,
+    private readonly dataSource: DataSource,
   ) { }
 
   // Product methods
@@ -84,5 +86,19 @@ export class InventoryService {
   }
   getUserDashboardStats(userId: string) {
     return this.businessInventoryService.getUserDashboardStats(userId);
+  }
+
+  async getInventoryCost(organizationId?: string) {
+    // Sum price * cantidad from products. If organizationId provided, filter by it.
+    const sql = organizationId
+      ? `SELECT SUM(price * cantidad) as total FROM products WHERE organization_id = $1`
+      : `SELECT SUM(price * cantidad) as total FROM products`;
+
+    const rows = organizationId
+      ? await this.dataSource.query(sql, [organizationId])
+      : await this.dataSource.query(sql);
+
+    const total = Number(rows?.[0]?.total || 0);
+    return { total };
   }
 }

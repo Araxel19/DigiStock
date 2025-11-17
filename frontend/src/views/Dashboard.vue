@@ -209,6 +209,130 @@
         </div>
       </div>
 
+      <!-- Data Entry View -->
+      <div v-else-if="authStore.user?.roles?.includes('data_entry')">
+        <!-- Data Entry Stats (styled) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div class="bg-slate-800/50 backdrop-blur-xl p-6 rounded-xl border border-cyan-500/20 shadow-lg hover:shadow-cyan-500/30 transition-all">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-cyan-300/70 mb-1">Mis Subidas</p>
+                <p class="text-3xl font-bold text-white">{{ myStats.totalUploads }}</p>
+              </div>
+              <div class="p-3 rounded-lg bg-gradient-to-br from-sky-500/20 to-blue-500/20 border border-sky-500/30">
+                <svg class="w-8 h-8 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v4a1 1 0 001 1h3m10 0h3a1 1 0 001-1V7M7 21h10a1 1 0 001-1v-5H6v5a1 1 0 001 1zM12 11V3"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-slate-800/50 backdrop-blur-xl p-6 rounded-xl border border-purple-500/20 shadow-lg hover:shadow-purple-500/30 transition-all">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-purple-300/70 mb-1">Procesadas</p>
+                <p class="text-3xl font-bold text-white">{{ myStats.processed }}</p>
+              </div>
+              <div class="p-3 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30">
+                <svg class="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7 21h10a1 1 0 001-1V11"/>
+                </svg>
+              </div>
+            </div>
+            <div class="mt-3 text-xs text-purple-300/70">Tiempo medio: {{ myStats.avgProcessingMinutes }} min</div>
+          </div>
+
+          <div class="bg-slate-800/50 backdrop-blur-xl p-6 rounded-xl border border-yellow-500/20 shadow-lg hover:shadow-yellow-500/30 transition-all">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-yellow-300/70 mb-1">Pendientes</p>
+                <p class="text-3xl font-bold text-white">{{ myStats.pending }}</p>
+              </div>
+              <div class="p-3 rounded-lg bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/30">
+                <svg class="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3M12 4a8 8 0 100 16 8 8 0 000-16z"/>
+                </svg>
+              </div>
+            </div>
+            <div class="mt-3 text-xs text-yellow-300/70">Revisa y corrige para acelerar el procesamiento</div>
+          </div>
+
+          <div class="bg-slate-800/50 backdrop-blur-xl p-6 rounded-xl border border-green-500/20 shadow-lg hover:shadow-green-500/30 transition-all">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-green-300/70 mb-1">Éxito OCR (mis planillas)</p>
+                <p class="text-3xl font-bold text-white">{{ myStats.ocrSuccessRate }}%</p>
+              </div>
+              <div class="p-3 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/30">
+                <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+            </div>
+            <div class="mt-3 text-xs text-cyan-300/70">Promedio de coincidencias por planilla</div>
+          </div>
+        </div>
+
+        <!-- Quick action -->
+        <div class="mb-6 flex items-center justify-between">
+          <router-link to="/upload" class="inline-flex items-center px-4 py-2 bg-cyan-600 text-white rounded-lg shadow hover:shadow-cyan-500/40 transition-all">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V7a1 1 0 011-1h8a1 1 0 011 1v9"/></svg>
+            Subir nueva planilla
+          </router-link>
+          <div class="text-sm text-cyan-300/70">Accede rápido a tus últimas subidas y estados</div>
+        </div>
+
+        <!-- Mis últimas planillas -->
+        <div class="bg-slate-800/50 backdrop-blur-xl rounded-xl border border-cyan-500/20 shadow-lg mb-8">
+          <div class="p-6 border-b border-cyan-500/20">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xl font-bold text-white">Mis últimas planillas</h3>
+              <div class="text-xs text-cyan-300/70">Mostrando últimas {{ myPlanillas.length }}</div>
+            </div>
+          </div>
+          <div class="p-6">
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="border-b border-cyan-500/20">
+                    <th class="text-left py-3 px-4 text-sm font-semibold text-cyan-300">Archivo</th>
+                    <th class="text-left py-3 px-4 text-sm font-semibold text-cyan-300">Estado</th>
+                    <th class="text-left py-3 px-4 text-sm font-semibold text-cyan-300">Procesado</th>
+                    <th class="text-right py-3 px-4 text-sm font-semibold text-cyan-300">Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="p in myPlanillas" :key="p.id" class="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors">
+                    <td class="py-4 px-4 text-white flex items-center space-x-3">
+                      <div class="w-10 h-10 rounded-md bg-slate-900/40 flex items-center justify-center border border-slate-700/30">
+                        <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>
+                      </div>
+                      <div>
+                        <div class="text-white font-medium">{{ p.fileName }}</div>
+                        <div class="text-xs text-slate-400">Subida: {{ new Date(p.createdAt || p.uploadedAt).toLocaleString() }}</div>
+                      </div>
+                    </td>
+                    <td class="py-4 px-4">
+                      <span class="px-3 py-1 text-xs font-semibold rounded-full" :class="{
+                        'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30': p.status === 'validacion_pendiente',
+                        'bg-green-500/10 text-green-300 border border-green-500/20': p.status === 'procesado',
+                        'bg-slate-700/20 text-slate-300 border border-slate-600/20': p.status === 'recibido'
+                      }">{{ p.status }}</span>
+                    </td>
+                    <td class="py-4 px-4 text-cyan-300/70">{{ p.processedAt ? new Date(p.processedAt).toLocaleString() : '-' }}</td>
+                    <td class="py-4 px-4 text-right">
+                      <router-link :to="{ name: 'PlanillaDetalle', params: { id: p.id } }" class="inline-flex items-center px-4 py-2 text-sm font-medium text-cyan-400 hover:text-cyan-300 border border-cyan-500/30 rounded-lg hover:bg-cyan-500/10 transition-all">
+                        Ver
+                      </router-link>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Organization User View -->
       <div v-else>
         <!-- Stats Cards with Mini Charts -->
@@ -401,7 +525,58 @@
           </div>
         </div>
 
-        <!-- Planillas Pendientes Table -->
+        <!-- Alerts + Critical Inventory -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div class="md:col-span-2 bg-slate-800/50 backdrop-blur-xl rounded-xl border border-cyan-500/20 shadow-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xl font-bold text-white">Alertas</h3>
+              <p class="text-sm text-cyan-300/70">Resumen rápido de eventos que requieren atención</p>
+            </div>
+            <div class="space-y-3">
+              <div v-if="pendingPlanillas.length > 0" class="flex items-center justify-between p-4 rounded bg-yellow-900/10 border border-yellow-500/10">
+                <div>
+                  <p class="text-sm text-yellow-300 font-semibold">Planillas pendientes</p>
+                  <p class="text-white text-lg font-bold">{{ pendingPlanillas.length }}</p>
+                </div>
+                <router-link :to="{ name: 'ValidarPlanilla' }" class="text-yellow-400 hover:text-yellow-300">Ver pendientes</router-link>
+              </div>
+
+              <div v-if="criticalProducts.length > 0" class="flex items-center justify-between p-4 rounded bg-red-900/10 border border-red-500/10">
+                <div>
+                  <p class="text-sm text-red-300 font-semibold">Productos con bajo stock</p>
+                  <p class="text-white text-lg font-bold">{{ criticalProducts.length }}</p>
+                </div>
+                <button @click="gotoInventory" class="text-red-400 hover:text-red-300">Ver inventario</button>
+              </div>
+
+              <div v-if="pendingPlanillas.length === 0 && criticalProducts.length === 0" class="p-4 rounded bg-slate-700/30 text-cyan-300">No hay alertas críticas en este momento</div>
+            </div>
+          </div>
+
+          <div class="bg-slate-800/50 backdrop-blur-xl rounded-xl border border-cyan-500/20 shadow-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-bold text-white">Inventario Crítico</h3>
+              <div class="flex items-center space-x-2">
+                <input type="number" v-model.number="lowStockThreshold" min="0" class="w-20 bg-slate-900/50 text-white px-2 py-1 rounded text-sm" />
+                <button @click="reloadCritical" class="px-3 py-1 bg-cyan-600 text-white rounded text-sm">Actualizar</button>
+              </div>
+            </div>
+
+            <div v-if="criticalProducts.length === 0" class="text-slate-500 text-sm">No se encontraron productos con stock por debajo del umbral.</div>
+            <ul v-else class="space-y-2">
+              <li v-for="p in criticalProducts" :key="p.id" class="flex items-center justify-between p-3 rounded bg-slate-700/30 border border-slate-600/20">
+                <div>
+                  <p class="text-white font-medium">{{ p.name }} <span class="text-xs text-slate-400">({{ p.code }})</span></p>
+                  <p class="text-sm text-cyan-300/70">Ubicación: {{ p.location?.name || 'N/A' }} • Categoría: {{ p.category?.name || 'N/A' }}</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-lg font-bold text-white">{{ p.cantidad }}</p>
+                  <p class="text-xs text-slate-400">umbral: {{ lowStockThreshold }}</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
         <div v-if="pendingPlanillas.length > 0" class="bg-slate-800/50 backdrop-blur-xl rounded-xl border border-cyan-500/20 shadow-lg mb-8">
           <div class="p-6 border-b border-cyan-500/20">
             <div class="flex items-center">
@@ -524,7 +699,8 @@ import { inventoryService } from '@/services/inventory.service'
 import { organizationService } from '@/services/organization.service'
 import { userService } from '@/services/user.service'
 import { analyticsService } from '@/services/analytics.service'
-import { Planilla } from '@/types/inventory'
+import { Planilla, Product } from '@/types/inventory'
+import { useRouter } from 'vue-router'
 import TrendsChart from '@/components/TrendsChart.vue'
 
 const authStore = useAuthStore()
@@ -556,6 +732,15 @@ const stats = ref({
 const recentActivity = ref<any[]>([])
 const pendingPlanillas = ref<Planilla[]>([])
 
+// Data-entry specific
+const myPlanillas = ref<Planilla[]>([])
+const myStats = ref({ totalUploads: 0, processed: 0, pending: 0, ocrSuccessRate: 0, avgProcessingMinutes: 0 })
+
+// Critical inventory
+const lowStockThreshold = ref<number>(5)
+const criticalProducts = ref<Product[]>([])
+const router = useRouter()
+
 // Usage metrics (superadmin)
 const usageLabels = ref<string[]>([])
 const planillasPerDay = ref<number[]>([])
@@ -576,7 +761,7 @@ const canPerformAction = (action: 'Subir Planilla' | 'Ver Inventario' | 'Gestion
   const roles = userRoles.value
   switch (action) {
     case 'Subir Planilla':
-      return roles.includes('supervisor') || roles.includes('data_entry')
+      return roles.includes('data_entry')
     case 'Ver Inventario':
       return roles.includes('org_admin') || roles.includes('supervisor')
     case 'Gestionar Usuarios':
@@ -685,6 +870,9 @@ async function loadInventoryData() {
       pendingPlanillas.value = planillas.filter(p => p.status === 'validacion_pendiente')
     }
 
+    // Cargar inventario crítico
+    await reloadCritical()
+
   } catch (error) {
     console.error('Error loading inventory data:', error)
     const { error: showError } = useToastStore()
@@ -701,6 +889,8 @@ async function loadDashboardData() {
     // Si es superadmin, usar el dashboard general de superadmin
     if (authStore.user?.isSuperAdmin) {
       await loadSuperAdminData()
+    } else if (authStore.user?.roles?.includes('data_entry')) {
+      await loadDataEntryData()
     } else {
       await loadInventoryData()
     }
@@ -710,6 +900,54 @@ async function loadDashboardData() {
     showError('Error al cargar datos del dashboard')
   } finally {
     isLoading.value = false
+  }
+}
+
+async function loadDataEntryData() {
+  try {
+    const planillas = await inventoryService.getMyPlanillas()
+    myPlanillas.value = planillas || []
+    const total = myPlanillas.value.length
+    const processed = myPlanillas.value.filter(p => p.status === 'procesado').length
+    const pending = myPlanillas.value.filter(p => p.status === 'validacion_pendiente').length
+
+    // calc average OCR success if available in planilla.stats
+    let successTotal = 0
+    let successCount = 0
+    let totalMinutes = 0
+    let timeCount = 0
+
+    for (const p of myPlanillas.value) {
+      if (p.stats) {
+        const added = Number(p.stats.added || 0)
+        const updated = Number(p.stats.updated || 0)
+        const unchanged = Number(p.stats.unchanged || 0)
+        const items = added + updated + unchanged
+        if (items > 0) {
+          successTotal += ((added + updated) / items) * 100
+          successCount++
+        }
+      }
+      if (p.processedAt && p.uploadedAt) {
+        const diffMs = new Date(p.processedAt).getTime() - new Date(p.uploadedAt).getTime()
+        if (!Number.isNaN(diffMs) && diffMs > 0) {
+          totalMinutes += diffMs / (1000 * 60)
+          timeCount++
+        }
+      }
+    }
+
+    const avgSuccess = successCount > 0 ? Math.round(successTotal / successCount) : 0
+    const avgMins = timeCount > 0 ? Math.round(totalMinutes / timeCount) : 0
+
+    myStats.value = { totalUploads: total, processed, pending, ocrSuccessRate: avgSuccess, avgProcessingMinutes: avgMins }
+
+    // also populate recentActivity simplified for data_entry
+    recentActivity.value = myPlanillas.value.slice(0,5).map(p => ({ id: p.id, type: 'planilla', title: 'Mi subida', description: p.fileName, time: p.uploadedAt }))
+  } catch (err) {
+    console.warn('Error loading data-entry dashboard', err)
+    myPlanillas.value = []
+    myStats.value = { totalUploads: 0, processed: 0, pending: 0, ocrSuccessRate: 0, avgProcessingMinutes: 0 }
   }
 }
 
@@ -788,5 +1026,23 @@ const barHeight = (value: number, series: number[]) => {
   const max = Math.max(...(series || [1]), 1)
   const h = Math.round((value / max) * 40)
   return `${h}px`
+}
+
+// Load critical products (low stock)
+async function reloadCritical() {
+  try {
+    const products = await inventoryService.getProducts()
+    const threshold = Number(lowStockThreshold.value || 0)
+    const filtered = (products || []).filter(p => Number(p.cantidad || 0) <= threshold)
+    // ordenar asc por cantidad y limitar
+    criticalProducts.value = filtered.sort((a, b) => Number(a.cantidad || 0) - Number(b.cantidad || 0)).slice(0, 10)
+  } catch (e) {
+    console.warn('Error loading critical products', e)
+    criticalProducts.value = []
+  }
+}
+
+function gotoInventory() {
+  router.push('/inventory')
 }
 </script>

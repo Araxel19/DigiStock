@@ -35,7 +35,7 @@ const routes: Array<RouteRecordRaw> = [
     path: '/upload',
     name: 'UploadPlanilla',
     component: UploadPlanilla,
-    meta: { requiresAuth: true, roles: ['org_admin', 'supervisor', 'data_entry'] }
+    meta: { requiresAuth: true, roles: ['org_admin', 'data_entry'] }
   },
   {
     path: '/inventory',

@@ -69,6 +69,12 @@ const routes: Array<RouteRecordRaw> = [
     meta: { requiresAuth: true, requiresSuperAdmin: true }
   },
   {
+    path: '/analytics/orgs/:id',
+    name: 'OrganizationAnalytics',
+    component: () => import('@/views/OrganizationAnalytics.vue'),
+    meta: { requiresAuth: true, requiresSuperAdmin: true }
+  },
+  {
     path: '/locations',
     name: 'LocationManagement',
     component: () => import('@/views/LocationManagement.vue'),

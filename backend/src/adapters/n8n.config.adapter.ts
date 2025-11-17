@@ -11,6 +11,6 @@ export class N8nConfigAdapter implements IN8nConfig {
   }
 
   getBaseUrl(): string {
-    return process.env.N8N_WEBHOOK_URL || 'http://n8n:5678/webhook-test';
+    return process.env.N8N_WEBHOOK_URL || 'http://n8n:5678/webhook';
   }
 }

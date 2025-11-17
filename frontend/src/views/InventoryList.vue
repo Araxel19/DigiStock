@@ -484,6 +484,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useInventoryStore } from '@/store/inventory'
+import { useToastStore } from '@/composables/useToast'
 import type { Product, Category } from '@/types/inventory'
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
@@ -607,6 +608,8 @@ const saveProduct = async () => {
     setTimeout(() => successMessage.value = '', 5000);
   } catch (error) {
     console.error('Error updating product:', error);
+    const { error: showError } = useToastStore();
+    showError('Error al actualizar el producto');
   }
 }
 

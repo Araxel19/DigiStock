@@ -343,6 +343,7 @@ import { userService } from '@/services/user.service';
 import { organizationService } from '@/services/organization.service';
 import { roleService } from '@/services/role.service';
 import { useAuthStore } from '@/store/auth';
+import { useToastStore } from '@/composables/useToast';
 import type { User } from '@/types/auth';
 import type { FrontendCreateUserDto, FrontendUpdateUserDto } from '@/types/user';
 
@@ -428,6 +429,8 @@ const fetchUsers = async () => {
     users.value.sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
   } catch (error) {
     console.error("Error fetching users:", error);
+    const { error: showError } = useToastStore();
+    showError('Error al cargar usuarios');
   }
 };
 
@@ -443,6 +446,8 @@ const fetchOrganizations = async () => {
     }
   } catch (error) {
     console.error("Error fetching organizations:", error);
+    const { error: showError } = useToastStore();
+    showError('Error al cargar organizaciones');
   }
 };
 
@@ -451,6 +456,8 @@ const fetchRoles = async () => {
     allRoles.value = await roleService.getAll();
   } catch (error) {
     console.error("Error fetching roles:", error);
+    const { error: showError } = useToastStore();
+    showError('Error al cargar roles');
   }
 };
 
@@ -464,6 +471,8 @@ const fetchInitialData = async () => {
     ]);
   } catch (error) {
     console.error("Error fetching initial data:", error);
+    const { error: showError } = useToastStore();
+    showError('Error al cargar datos iniciales');
   } finally {
     loading.value = false;
   }
@@ -544,6 +553,7 @@ const saveUser = async () => {
     await fetchUsers();
   } catch (err: any) {
     console.error("Error saving user:", err);
+    const { error: showError } = useToastStore();
     if (err.response?.data?.message) {
       if (Array.isArray(err.response.data.message)) {
         modalError.value = err.response.data.message.join(', ');
@@ -557,6 +567,7 @@ const saveUser = async () => {
     } else {
       modalError.value = 'Error al guardar usuario';
     }
+    showError(modalError.value);
   }
 };
 
@@ -572,7 +583,8 @@ const deleteUser = async (id: string) => {
     await fetchUsers();
   } catch (error) {
     console.error("Error deleting user:", error);
-    alert(`Error al eliminar usuario: ${(error as Error).message}`);
+    const { error: showError } = useToastStore();
+    showError(`Error al eliminar usuario: ${(error as Error).message}`);
   }
 };
 

@@ -259,6 +259,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { categoryService } from '@/services/category.service';
+import { useToastStore } from '@/composables/useToast';
 
 interface Category {
   id: string;
@@ -282,6 +283,8 @@ const fetchCategories = async () => {
     categories.value = await categoryService.getAll();
   } catch (error) {
     console.error("Error fetching categories:", error);
+    const { error: showError } = useToastStore();
+    showError('Error al cargar categorías');
   } finally {
     loading.value = false;
   }
@@ -325,6 +328,8 @@ const handleSave = async () => {
     fetchCategories();
   } catch (error) {
     console.error("Error saving category:", error);
+    const { error: showError } = useToastStore();
+    showError('Error al guardar la categoría');
   }
 };
 
@@ -335,6 +340,8 @@ const handleDelete = async () => {
     fetchCategories();
   } catch (error) {
     console.error("Error deleting category:", error);
+    const { error: showError } = useToastStore();
+    showError('Error al eliminar la categoría');
   }
 };
 </script>

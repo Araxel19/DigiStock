@@ -27,10 +27,10 @@ export class AnalyticsService {
     if (range === '7d') days = 7;
     else if (range === '30d') days = 30;
 
-    // ventas: sum of corrected_quantity (or detected_quantity) per processed day
+    // ventas: sum of ventas (cantidad negativa en planilla_items) por día
     const ventasQuery = `
       SELECT to_char(date_trunc('day', COALESCE(p.processed_at, p.uploaded_at)), 'YYYY-MM-DD') AS day,
-             SUM(COALESCE(pi.corrected_quantity, pi.detected_quantity)) AS total
+             SUM(CASE WHEN COALESCE(pi.corrected_quantity, pi.detected_quantity) < 0 THEN -COALESCE(pi.corrected_quantity, pi.detected_quantity) ELSE 0 END) AS total
       FROM planilla_items pi
       JOIN planillas p ON pi.planilla_id = p.id
       WHERE (COALESCE(p.processed_at, p.uploaded_at)) >= CURRENT_DATE - INTERVAL '${days - 1} day'
@@ -99,9 +99,9 @@ export class AnalyticsService {
     if (range === '7d') days = 7;
     else if (range === '30d') days = 30;
 
-    // Total ventas en el periodo (sum of corrected or detected quantities)
+    // Total ventas en el periodo (sum of negative quantities converted to positive)
     const ventasSql = `
-      SELECT SUM(COALESCE(pi.corrected_quantity, pi.detected_quantity)) AS total
+      SELECT SUM(CASE WHEN COALESCE(pi.corrected_quantity, pi.detected_quantity) < 0 THEN -COALESCE(pi.corrected_quantity, pi.detected_quantity) ELSE 0 END) AS total
       FROM planilla_items pi
       JOIN planillas p ON pi.planilla_id = p.id
       WHERE (COALESCE(p.processed_at, p.uploaded_at)) >= CURRENT_DATE - INTERVAL '${days - 1} day'
@@ -264,9 +264,9 @@ export class AnalyticsService {
     const costSql = `SELECT organization_id, SUM(price * cantidad) AS total FROM products GROUP BY organization_id`;
     const costRows = await this.dataSource.query(costSql);
 
-    // Ventas total per org in period
+    // Ventas total per org in period (count negative quantities as sales)
     const ventasSql = `
-      SELECT p.organization_id, SUM(COALESCE(pi.corrected_quantity, pi.detected_quantity)) AS ventas_total
+      SELECT p.organization_id, SUM(CASE WHEN COALESCE(pi.corrected_quantity, pi.detected_quantity) < 0 THEN -COALESCE(pi.corrected_quantity, pi.detected_quantity) ELSE 0 END) AS ventas_total
       FROM planilla_items pi
       JOIN planillas p ON pi.planilla_id = p.id
       WHERE (COALESCE(p.processed_at, p.uploaded_at)) >= CURRENT_DATE - INTERVAL '${days - 1} day'
@@ -362,7 +362,7 @@ export class AnalyticsService {
         FROM organizations o
         LEFT JOIN (SELECT organization_id, SUM(price * cantidad) AS total FROM products GROUP BY organization_id) cost ON cost.organization_id = o.id
         LEFT JOIN (
-          SELECT p.organization_id, SUM(COALESCE(pi.corrected_quantity, pi.detected_quantity)) AS ventas_total
+          SELECT p.organization_id, SUM(CASE WHEN COALESCE(pi.corrected_quantity, pi.detected_quantity) < 0 THEN -COALESCE(pi.corrected_quantity, pi.detected_quantity) ELSE 0 END) AS ventas_total
           FROM planilla_items pi
           JOIN planillas p ON pi.planilla_id = p.id
           WHERE (COALESCE(p.processed_at, p.uploaded_at)) >= CURRENT_DATE - INTERVAL '${days - 1} day'
@@ -420,5 +420,83 @@ export class AnalyticsService {
     }
 
     return lines.join('\n')
+  }
+
+  async getOrganizationAnalytics(organizationId: string, range: '7d'|'30d'|'90d' = '30d') {
+    let days = 30
+    if (range === '7d') days = 7
+    else if (range === '90d') days = 90
+
+    // Get org name
+    const org = await this.dataSource.query(
+      `SELECT id, name FROM organizations WHERE id = $1`,
+      [organizationId]
+    )
+    const orgName = org?.[0]?.name || 'Organización'
+
+    // Get overall metrics
+    const metrics = await this.dataSource.query(`
+      SELECT 
+        SUM(COALESCE(pi.corrected_quantity, pi.detected_quantity) * COALESCE(pr.price, 0)) as cost,
+        COUNT(DISTINCT pi.planilla_id) as planillas_count,
+        SUM(CASE WHEN COALESCE(pi.corrected_quantity, pi.detected_quantity) < 0 THEN -COALESCE(pi.corrected_quantity, pi.detected_quantity) ELSE 0 END) as ventas
+      FROM planilla_items pi
+      JOIN planillas p ON pi.planilla_id = p.id
+      LEFT JOIN products pr ON pr.id = pi.corrected_product_id
+      WHERE p.organization_id = $1
+      AND (COALESCE(p.processed_at, p.uploaded_at)) >= CURRENT_DATE - INTERVAL '${days - 1} day'
+    `, [organizationId])
+
+    const cost = Number(metrics?.[0]?.cost || 0)
+    const planillasCount = Number(metrics?.[0]?.planillas_count || 0)
+    const ventas = Number(metrics?.[0]?.ventas || 0)
+
+    // Get avg inventory
+    const avgInvQuery = await this.dataSource.query(`
+      SELECT AVG(stock_quantity) as avg_inventory
+      FROM inventory_snapshots
+      WHERE organization_id = $1
+      AND snapshot_date >= CURRENT_DATE - INTERVAL '${days - 1} day'
+    `, [organizationId])
+    const avgInventory = Number(avgInvQuery?.[0]?.avg_inventory || 0)
+
+    // Calculate turnover
+    const turnover = avgInventory > 0 ? ventas / avgInventory : 0
+
+    // Get monthly breakdown
+    const monthlyData = await this.dataSource.query(`
+      SELECT 
+        to_char(date_trunc('month', COALESCE(p.processed_at, p.uploaded_at)), 'YYYY-MM') as month,
+        SUM(COALESCE(pi.corrected_quantity, pi.detected_quantity) * COALESCE(pr.price, 0)) as cost,
+        SUM(CASE WHEN COALESCE(pi.corrected_quantity, pi.detected_quantity) < 0 THEN -COALESCE(pi.corrected_quantity, pi.detected_quantity) ELSE 0 END) as ventas,
+        COUNT(DISTINCT pi.planilla_id) as planillas_count
+      FROM planilla_items pi
+      JOIN planillas p ON pi.planilla_id = p.id
+      LEFT JOIN products pr ON pr.id = pi.corrected_product_id
+      WHERE p.organization_id = $1
+      AND (COALESCE(p.processed_at, p.uploaded_at)) >= CURRENT_DATE - INTERVAL '${days - 1} day'
+      GROUP BY month
+      ORDER BY month
+    `, [organizationId])
+
+    // Calculate monthly turnover
+    const monthlyWithTurnover = monthlyData.map((m: any) => ({
+      month: m.month || '',
+      cost: Number(m.cost || 0),
+      ventas: Number(m.ventas || 0),
+      planillasCount: Number(m.planillas_count || 0),
+      turnover: avgInventory > 0 ? Number(m.ventas || 0) / avgInventory : 0
+    }))
+
+    return {
+      data: {
+        name: orgName,
+        cost,
+        ventas,
+        turnover,
+        planillasCount,
+        monthlyData: monthlyWithTurnover
+      }
+    }
   }
 }

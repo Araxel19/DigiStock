@@ -275,7 +275,6 @@ import { ref, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToastStore } from '@/composables/useToast';
 import { inventoryService } from '@/services/inventory.service';
-import { io, Socket } from 'socket.io-client';
 
 const router = useRouter();
 
@@ -288,7 +287,7 @@ const isProcessing = ref(false);
 const errorMessage = ref('');
 const processingSteps = ref<any[]>([]);
 
-let socket: Socket | null = null;
+let socket: any = null;
 
 const triggerFileInput = () => {
   fileInput.value?.click();
@@ -355,7 +354,7 @@ const processFile = async () => {
     const result = await inventoryService.uploadPlanilla(selectedFile.value);
     const planillaId = result.id;
 
-    initWebSocket(planillaId);
+    await initWebSocket(planillaId);
 
   } catch (error: any) {
     errorMessage.value = error.message || 'Error al procesar la planilla';
@@ -366,30 +365,37 @@ const processFile = async () => {
   }
 };
 
-// WebSocket for real-time updates
-const initWebSocket = (planillaId: string) => {
-  socket = io('http://localhost:3000/ws/progress');
+// WebSocket for real-time updates (loaded dynamically to avoid build-time import issues)
+const initWebSocket = async (planillaId: string) => {
+  try {
+    const client = await import('socket.io-client');
+    // support different bundler/module shapes: named export `io`, default, or module itself
+    const ioFn = (client as any).io ?? (client as any).default ?? client;
+    socket = ioFn('http://localhost:3000/ws/progress');
 
-  socket.on('connect', () => {
-    console.log('Connected to WebSocket');
-    socket?.emit('joinRoom', planillaId);
-  });
+    socket.on('connect', () => {
+      console.log('Connected to WebSocket');
+      socket?.emit('joinRoom', planillaId);
+    });
 
-  socket.on('progress', (data: any) => {
-    addProcessingStep(data.message, 'Progreso de OCR', data.status);
-    if (data.status === 'validacion_pendiente') {
-      isProcessing.value = false;
-      router.push({ name: 'ValidarPlanilla', params: { id: planillaId } });
-    }
-  });
+    socket.on('progress', (data: any) => {
+      addProcessingStep(data.message, 'Progreso de OCR', data.status);
+      if (data.status === 'validacion_pendiente') {
+        isProcessing.value = false;
+        router.push({ name: 'ValidarPlanilla', params: { id: planillaId } });
+      }
+    });
 
-  socket.on('disconnect', () => {
-    console.log('Disconnected from WebSocket');
-  });
+    socket.on('disconnect', () => {
+      console.log('Disconnected from WebSocket');
+    });
 
-  socket.on('error', (error: any) => {
-    console.error('WebSocket error:', error);
-  });
+    socket.on('error', (error: any) => {
+      console.error('WebSocket error:', error);
+    });
+  } catch (err) {
+    console.error('Failed to initialize WebSocket client', err);
+  }
 };
 
 const addProcessingStep = (title: string, description: string, status: string) => {
@@ -407,7 +413,7 @@ const formatFileSize = (bytes: number): string => {
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
 // Lifecycle

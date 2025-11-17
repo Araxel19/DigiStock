@@ -27,6 +27,7 @@
                   <th class="py-2 px-3 cursor-pointer" @click="sortBy('avgInventory')">Inventario Promedio <span v-if="sort.key==='avgInventory'">{{ sort.dir==='asc'?'▲':'▼' }}</span></th>
                   <th class="py-2 px-3 cursor-pointer" @click="sortBy('turnover')">Rotación <span v-if="sort.key==='turnover'">{{ sort.dir==='asc'?'▲':'▼' }}</span></th>
                   <th class="py-2 px-3 cursor-pointer" @click="sortBy('planillasCount')">Planillas <span v-if="sort.key==='planillasCount'">{{ sort.dir==='asc'?'▲':'▼' }}</span></th>
+                  <th class="py-2 px-3">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -37,6 +38,11 @@
                   <td class="py-3 px-3 text-white">{{ Math.round(org.avgInventory) }}</td>
                   <td class="py-3 px-3 text-white">{{ (org.turnover || 0).toFixed(2) }}x</td>
                   <td class="py-3 px-3 text-white">{{ org.planillasCount }}</td>
+                  <td class="py-3 px-3">
+                    <button @click="viewOrgDetails(org.id)" class="px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-sm transition-colors">
+                      Ver Detalles
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -64,8 +70,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { analyticsService, AnalyticsRange } from '@/services/analytics.service'
 import { useToastStore } from '@/composables/useToast'
+
+const router = useRouter()
 
 const orgs = ref<any[]>([])
 const isLoading = ref(false)
@@ -171,6 +180,10 @@ const exportCsv = async () => {
 }
 
 const formatCurrency = (v: number) => `$${new Intl.NumberFormat('es-ES').format(Math.round(v || 0))}`
+
+const viewOrgDetails = (orgId: string) => {
+  router.push({ name: 'OrganizationAnalytics', params: { id: orgId } })
+}
 </script>
 
 <!-- estilos gestionados globalmente; no es necesario CSS local -->

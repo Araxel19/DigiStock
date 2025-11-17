@@ -181,6 +181,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { inventoryService } from '@/services/inventory.service'
+import { useToastStore } from '@/composables/useToast'
 import type { Planilla } from '@/types/inventory'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -196,6 +197,8 @@ const fetchMyPlanillas = async () => {
     planillas.value = response
   } catch (error) {
     console.error('Error fetching planillas:', error)
+    const { error: showError } = useToastStore();
+    showError('Error al cargar planillas')
   } finally {
     loading.value = false
   }

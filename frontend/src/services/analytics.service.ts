@@ -49,4 +49,9 @@ export const analyticsService = {
     const res = await api.get('/analytics/orgs/export', { params, responseType: 'blob' })
     return res.data as Blob
   },
+  async getOrganizationAnalytics(orgId: string, range: AnalyticsRange = '30d') {
+    const params: any = { range }
+    const res = await api.get(`/analytics/orgs/${orgId}`, { params })
+    return res.data as { data: any }
+  },
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Req, UseGuards, Header, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Query, Param, Req, UseGuards, Header, ForbiddenException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AnalyticsService } from './analytics.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -72,5 +72,18 @@ export class AnalyticsController {
     if (!req.user?.isSuperAdmin) throw new ForbiddenException('Only super admins can access this resource')
     const csv = await this.analyticsService.getOrgsAnalysisCsv({ range, q, sortKey, sortDir })
     return csv
+  }
+
+  @ApiOperation({ summary: 'Get detailed analytics for a specific organization' })
+  @Get('orgs/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('org_admin', 'supervisor', 'data_entry')
+  async getOrganizationAnalytics(
+    @Req() req,
+    @Param('id') orgId: string,
+    @Query('range') range: '7d' | '30d' | '90d' = '30d',
+  ) {
+    if (!req.user?.isSuperAdmin) throw new ForbiddenException('Only super admins can access this resource')
+    return this.analyticsService.getOrganizationAnalytics(orgId, range)
   }
 }

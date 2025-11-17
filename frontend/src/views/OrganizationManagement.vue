@@ -207,6 +207,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { organizationService } from '@/services/organization.service'
+import { useToastStore } from '@/composables/useToast'
 
 interface Organization {
   id: string;
@@ -234,6 +235,8 @@ const fetchOrganizations = async () => {
     organizations.value = response.map((org: any) => ({ ...org, memberCount: org.users?.length || 0 }));
   } catch (error) {
     console.error("Error fetching organizations:", error)
+    const { error: showError } = useToastStore();
+    showError('Error al cargar organizaciones');
   } finally {
     loading.value = false
   }
@@ -272,7 +275,8 @@ const saveOrganization = async () => {
     closeModal();
   } catch (error) {
     console.error("Error saving organization:", error);
-    alert('Hubo un error al guardar la organización.');
+    const { error: showError } = useToastStore();
+    showError('Error al guardar la organización');
   }
 };
 
@@ -283,7 +287,8 @@ const deleteOrganization = async (id: string) => {
       await fetchOrganizations();
     } catch (error) {
       console.error("Error deleting organization:", error);
-      alert('Hubo un error al eliminar la organización.');
+      const { error: showError } = useToastStore();
+      showError('Error al eliminar la organización');
     }
   }
 }

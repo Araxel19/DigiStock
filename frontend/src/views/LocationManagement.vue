@@ -272,6 +272,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { locationService } from '@/services/location.service';
+import { useToastStore } from '@/composables/useToast';
 
 interface Location {
   id: string;
@@ -295,6 +296,8 @@ const fetchLocations = async () => {
     locations.value = await locationService.getAll();
   } catch (error) {
     console.error("Error fetching locations:", error);
+    const { error: showError } = useToastStore();
+    showError('Error al cargar ubicaciones');
   } finally {
     loading.value = false;
   }
@@ -338,6 +341,8 @@ const handleSave = async () => {
     fetchLocations();
   } catch (error) {
     console.error("Error saving location:", error);
+    const { error: showError } = useToastStore();
+    showError('Error al guardar la ubicación');
   }
 };
 
@@ -348,6 +353,8 @@ const handleDelete = async () => {
     fetchLocations();
   } catch (error) {
     console.error("Error deleting location:", error);
+    const { error: showError } = useToastStore();
+    showError('Error al eliminar la ubicación');
   }
 };
 </script>

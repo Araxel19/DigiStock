@@ -253,6 +253,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
 import { useAuthStore } from '@/store/auth';
+import { useToastStore } from '@/composables/useToast';
 import { storeToRefs } from 'pinia';
 import { organizationService } from '@/services/organization.service'
 
@@ -285,6 +286,8 @@ onMounted(async () => {
     } catch (err) {
       console.error('Error al obtener la organización:', err);
       organizationName.value = 'Desconocida';
+      const { error: showError } = useToastStore();
+      showError('Error al cargar la organización');
     }
   }
 });
@@ -304,6 +307,8 @@ const saveProfile = async () => {
   } catch (error) {
     errorMessage.value = 'Error al actualizar el perfil.';
     console.error(error);
+    const { error: showError } = useToastStore();
+    showError('Error al actualizar el perfil');
   }
 };
 </script>
